@@ -1,18 +1,16 @@
 package ru.strbnm.store.dto;
 
+import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Value
 public class CartItemDTO {
-  private Long productId;
-  private String productName;
-  private int quantity;
-  private BigDecimal price;
+  Long productId;
+  String productName;
+  String productImageUrl;
+  @Positive(message = "Количество товара должно быть положительным числом.")
+  int quantity;
+  @Positive(message = "Цена товара должна быть положительным числом.")
+  BigDecimal productPrice;
 }
