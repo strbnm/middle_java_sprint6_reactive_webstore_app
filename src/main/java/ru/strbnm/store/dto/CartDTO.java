@@ -7,6 +7,6 @@ import java.util.List;
 
 @Value
 public class CartDTO {
-    List<CartItemDTO> items;
-    BigDecimal totalPrice;
+    List<CartItemDTO> cartItemDTOList;
+    BigDecimal cartAmount;
 }

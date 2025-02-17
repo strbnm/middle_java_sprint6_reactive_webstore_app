@@ -65,12 +65,12 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartDTO getCartSummary() {
         List<CartItemDTO> cartItemDTOList = getCartItems();
-        BigDecimal cartTotalPrice = cartItemDTOList.stream()
+        BigDecimal cartAmount = cartItemDTOList.stream()
                 .map(item -> item.getProductPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return new CartDTO(
                 cartItemDTOList,
-                cartTotalPrice
+                cartAmount
         );
     }
 }
