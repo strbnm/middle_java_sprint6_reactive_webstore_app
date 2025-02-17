@@ -42,3 +42,4 @@ out/
 ### Property files ###
 *.properties
 /.idea/
+/gradle/wrapper/gradle-wrapper.jar
