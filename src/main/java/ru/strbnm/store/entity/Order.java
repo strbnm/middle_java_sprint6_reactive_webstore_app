@@ -19,8 +19,10 @@ import org.hibernate.proxy.HibernateProxy;
 public class Order {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", nullable = false)
   private Long id;
 
+  @Column(name = "total_price", nullable = false, columnDefinition = "CHECK (total_price > 0)")
   private BigDecimal totalPrice;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)

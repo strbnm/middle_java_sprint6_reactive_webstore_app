@@ -2,8 +2,13 @@ package ru.strbnm.store.entity;
 
 import jakarta.persistence.*;
 import java.util.Objects;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -17,12 +22,18 @@ import org.hibernate.proxy.HibernateProxy;
 public class CartItem {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", nullable = false)
   private Long id;
 
-  @ManyToOne
-  @JoinColumn(name = "product_id")
+  @NotNull
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "product_id", unique = true, nullable = false)
   private Product product;
 
+  @NotNull
+  @Positive(message = "Количество товара должно быть положительным числом.")
+  @Column(name = "quantity", nullable = false)
+  @JdbcTypeCode(SqlTypes.INTEGER)
   private int quantity;
 
   @Override
