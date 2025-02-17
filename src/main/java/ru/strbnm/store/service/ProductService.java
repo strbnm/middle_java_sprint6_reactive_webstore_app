@@ -12,8 +12,8 @@ public interface ProductService {
     Page<ProductDTO> findAllProductByNameOrDescriptionContaining(String search, Pageable pageable);
     Page<ProductDTO> findAllProductByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     Page<ProductDTO> findAllProductByNameStartsWith(String search, Pageable pageable);
-    ProductDTO getProductById (Long id);
-    Product getOne(Long id);
+    ProductDTO getProductById (Long productId);
+    Product getOne(Long productId);
     ProductDTO saveProduct(Product product);
-    void deleteProduct(Long id);
+    void deleteProduct(Long productId);
 }
