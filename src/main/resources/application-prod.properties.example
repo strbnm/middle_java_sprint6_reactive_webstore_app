@@ -1,0 +1,24 @@
+# JPA settings
+spring.jpa.hibernate.ddl-auto=none
+spring.datasource.url=jdbc:postgresql://postgresql:5432/web_store_db
+spring.datasource.driverClassName=org.postgresql.Driver
+spring.datasource.username=web_store_app_user
+spring.datasource.password=web_store_app_password
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+#Server configuration
+server.servlet.context-path=/
+
+#Spring Actuator configuration
+management.endpoints.web.exposure.include=health,info,flyway,metrics
+
+#Flyway configuration
+spring.flyway.baseline-on-migrate=true
+spring.flyway.baseline-version=0
+spring.flyway.target=2
+spring.flyway.locations=classpath:db/migration
+
+#Image Upload Configuration
+app.product.image.dir=/opt/product_images
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=5MB
