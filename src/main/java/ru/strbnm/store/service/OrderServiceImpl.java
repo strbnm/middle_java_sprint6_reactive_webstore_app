@@ -34,12 +34,12 @@ public class OrderServiceImpl implements OrderService {
     this.orderMapper = orderMapper;
   }
 
-  @Override
   @Transactional
+  @Override
   public OrderDTO createOrder() {
     List<CartItem> cartItems = cartItemRepository.findAll();
     if (cartItems.isEmpty()) {
-      throw new RuntimeException("Cart is empty");
+      throw new RuntimeException("Корзина пустая.");
     }
 
     BigDecimal totalPrice =

@@ -1,12 +1,11 @@
 package ru.strbnm.store.entity;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.util.Objects;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
+import java.util.Objects;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.proxy.HibernateProxy;

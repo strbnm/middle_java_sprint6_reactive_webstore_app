@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class OrderDTO {
-    private Long id;
-    private BigDecimal totalPrice;
-    private List<OrderItemDTO> items;
+  private Long id;
+  private BigDecimal totalPrice;
+  private List<OrderItemDTO> items;
 }

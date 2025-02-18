@@ -1,7 +1,6 @@
 package ru.strbnm.store.dto;
 
 import java.math.BigDecimal;
-
 import lombok.*;
 
 @Value

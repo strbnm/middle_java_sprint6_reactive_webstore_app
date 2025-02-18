@@ -1,10 +1,9 @@
 package ru.strbnm.store.entity;
 
 import jakarta.persistence.*;
-import java.util.Objects;
-
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import java.util.Objects;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.proxy.HibernateProxy;
