@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+
+    <changeSet id="1740155129595-1" author="strbnm" context="prod,test">
+        <preConditions>
+            <not>
+                <tableExists tableName="cart_items"/>
+            </not>
+        </preConditions>
+        <createTable tableName="cart_items">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_cart_items"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INT">
+                <constraints nullable="false" checkConstraint="quantity > 0"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="cart_items"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="1740155129595-2" author="strbnm" context="prod,test">
+        <preConditions>
+            <not>
+                <tableExists tableName="order_items"/>
+            </not>
+        </preConditions>
+        <createTable tableName="order_items">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_order_items"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INT">
+                <constraints nullable="false" checkConstraint="quantity > 0"/>
+            </column>
+            <column name="price" type="DECIMAL(10,2)">
+                <constraints nullable="false" checkConstraint="price > 0"/>
+            </column>
+            <column name="order_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="order_items"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="1740155129595-3" author="strbnm" context="prod,test">
+        <preConditions>
+            <not>
+                <tableExists tableName="orders"/>
+            </not>
+        </preConditions>
+        <createTable tableName="orders">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_orders"/>
+            </column>
+            <column name="total_price" type="DECIMAL(10,2)">
+                <constraints nullable="false" checkConstraint="total_price > 0"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="orders"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="1740155129595-4" author="strbnm" context="prod,test">
+        <preConditions>
+            <not>
+                <tableExists tableName="products"/>
+            </not>
+        </preConditions>
+        <createTable tableName="products">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_products"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_url" type="VARCHAR(255)"/>
+            <column name="price" type="DECIMAL(10,2)">
+                <constraints nullable="false" checkConstraint="price > 0"/>
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="products"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="1740155129595-5" author="strbnm" context="prod,test">
+        <addUniqueConstraint columnNames="product_id" constraintName="uc_cart_items_product" tableName="cart_items"/>
+    </changeSet>
+
+    <changeSet id="1740155129595-6" author="strbnm" context="prod,test">
+        <addForeignKeyConstraint baseColumnNames="product_id" baseTableName="cart_items"
+                                 constraintName="FK_CART_ITEMS_ON_PRODUCT" referencedColumnNames="id"
+                                 referencedTableName="products"/>
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="cart_items" constraintName="FK_CART_ITEMS_ON_PRODUCT"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="1740155129595-7" author="strbnm" context="prod,test">
+        <addForeignKeyConstraint baseColumnNames="order_id" baseTableName="order_items"
+                                 constraintName="FK_ORDER_ITEMS_ON_ORDER" referencedColumnNames="id"
+                                 referencedTableName="orders"/>
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="order_items" constraintName="FK_ORDER_ITEMS_ON_ORDER"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="1740155129595-8" author="strbnm" context="prod,test">
+        <addForeignKeyConstraint baseColumnNames="product_id" baseTableName="order_items"
+                                 constraintName="FK_ORDER_ITEMS_ON_PRODUCT" referencedColumnNames="id"
+                                 referencedTableName="products"/>
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="order_items" constraintName="FK_ORDER_ITEMS_ON_PRODUCT"/>
+        </rollback>
+    </changeSet>
+    <changeSet id="1740157725677-1" author="strbnm" context="test">
+        <loadData tableName="products" file="db/data/products.csv" separator=";">
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="description" type="VARCHAR"/>
+            <column name="price" type="DECIMAL(10,2)"/>
+        </loadData>
+        <!--        <loadData tableName="cart_items" file="classpath:db/data/cart_items.csv" separator=";">-->
+        <!--            <column name="product_id" type="BIGINT"/>-->
+        <!--            <column name="quantity" type="INT"/>-->
+        <!--        </loadData>-->
+        <!--        <loadData tableName="orders" file="classpath:db/data/orders.csv" separator=";">-->
+        <!--            <column name="total_price" type="DECIMAL(10,2)"/>-->
+        <!--        </loadData>-->
+        <!--        <loadData tableName="order_items" file="classpath:db/data/order_items.csv" separator=";">-->
+        <!--            <column name="product_id" type="BIGINT"/>-->
+        <!--            <column name="quantity" type="INT"/>-->
+        <!--            <column name="price" type="DECIMAL(10,2)"/>-->
+        <!--            <column name="order_id" type="BIGINT"/>-->
+        <!--        </loadData>-->
+    </changeSet>
+</databaseChangeLog>
