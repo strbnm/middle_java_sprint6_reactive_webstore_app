@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Витрина интернет-магазина')}"></head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<main class="container">
+    <h4 class="page-title" th:text="${title != null ? title:'Все товары'}"></h4>
+    <div class="row">
+        <div id="productsContainer" class="col s8 offset-s2">
+            <div th:replace="~{fragments/products-feed :: feed}"></div>
+        </div>
+        <br/>
+    </div>
+    <!--Content-->
+    <div th:if="${products.totalElements > 0 and products.totalPages > 0}" class="row pagination-container">
+        <!-- Выпадающий список выбора количества элементов -->
+        <div class="col s6 m4">
+            <form method="get" th:action="@{/products}">
+                <label for="size">Элементов на странице:</label>
+                <select id="size" name="size" class="browser-default" onchange="this.form.submit()">
+                    <option th:value="10" th:selected="${size == 10}">10</option>
+                    <option th:value="20" th:selected="${size == 20}">20</option>
+                    <option th:value="50" th:selected="${size == 50}">50</option>
+                    <option th:value="100" th:selected="${size == 100}">100</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Пагинация -->
+        <div class="col s6 m8">
+            <ul class="pagination right">
+                <li th:class="${products.number eq 0} ? 'disabled=&quot;disabled&quot;' : ''">
+                    <a th:if="${not products.first}"
+                       th:href="@{/products(page=${products.number-1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting}}">
+                        <i class="material-icons">chevron_left</i>
+                    </a>
+                    <a th:if="${products.first}" href="#"><i class="material-icons">chevron_left</i></a>
+                </li>
+                <li th:each="pageNo : ${#numbers.sequence(0, products.totalPages - 1)}"
+                    th:class="${products.number eq pageNo} ? 'active' : 'waves-effect'">
+                    <a th:href="@{/products(page=${pageNo}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting}}"
+                       th:text="${pageNo + 1}"></a>
+                </li>
+                <li th:class="${products.number + 1 ge products.totalPages} ? 'disabled=&quot;disabled&quot;' : ''">
+                    <a th:if="${not products.last}"
+                       th:href="@{/products(page=${products.number+1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting}}">
+                        <i class="material-icons">chevron_right</i>
+                    </a>
+                    <a th:if="${products.last}" href="#"><i class="material-icons">chevron_right</i></a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</main>
+<!--container-->
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script>
+    $(document).ready(function() {
+        // Инициализация Materialize select с множественным выбором
+        $('select').material_select();
+
+        // Показать или скрыть секцию фильтра
+        $('#filterBtn').click(function(e) {
+            e.preventDefault();
+            $('#filterSection').toggle();
+        });
+
+      function toggleClearButton() {
+          const fields = ['text', 'price_from', 'price_to', 'letter'];
+          const clearButton = $('#clearButton');
+          clearButton.prop('disabled', fields.every(field => $(`input[name="${field}"]`).val().trim() === ''));
+      }
+
+      function clearFilter() {
+          $('#filterForm input').val('');
+          $('#filterForm').submit();
+      }
+
+      toggleClearButton();
+
+      $('.add-to-cart').on('click', function () {
+          const productId = $(this).data('product-id');
+          $(this).hide();
+          const controls = $(this).next();
+          controls.show();
+
+          controls.find('.plus').on('click', function () {
+              let input = controls.find('.quantity-input');
+              input.val(parseInt(input.val()) + 1);
+          });
+
+          controls.find('.minus').on('click', function () {
+              let input = controls.find('.quantity-input');
+              if (parseInt(input.val()) > 1) input.val(parseInt(input.val()) - 1);
+          });
+      });
+
+      $('#size').on('change', function () {
+          const size = $(this).val();
+          const url = new URL(window.location.href);
+          url.searchParams.set('size', size);
+          window.location.href = url;
+      });
+    });
+</script>
+</body>
+</html>

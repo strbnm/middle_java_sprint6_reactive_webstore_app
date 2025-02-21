@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="feed">
+    <ul class="collection">
+        <li class="collection-item avatar product-row" th:each="product : ${products.content}">
+            <img th:if="${product.imageUrl == null}" class="circle" th:src="@{/imgs/stub_product_img.png}"
+                 alt="placeholder"/>
+            <img th:if="${product.imageUrl != null}" class="circle"
+                 th:src="@{/product_image_dir/{img}(img=${product.imageUrl})}" alt="Product Image"/>
+            <span class="title" th:text="${product.name}" th:onclick="@{/products/{productId}(productId=${product.id})}"
+                  style="cursor:pointer;"></span>
+            <p th:text="'Цена: ' + ${product.price} + ' руб.'"></p>
+            <button class="btn add-to-cart" th:attr="data-product-id=${product.id}">В корзину</button>
+            <div class="quantity-controls" style="display:none;">
+                <button class="btn minus">-</button>
+                <input type="number" min="1" value="1" class="quantity-input"/>
+                <button class="btn plus">+</button>
+            </div>
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>
