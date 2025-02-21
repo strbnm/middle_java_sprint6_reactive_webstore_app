@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Objects;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -25,10 +27,12 @@ public class OrderItem {
   @JoinColumn(name = "product_id", nullable = false)
   private Product product;
 
-  @Column(name = "quantity", nullable = false, columnDefinition = "CHECK (quantity > 0)")
+  @Column(name = "quantity", nullable = false)
+  @JdbcTypeCode(SqlTypes.INTEGER)
   private int quantity;
 
-  @Column(name = "price", nullable = false, columnDefinition = "CHECK (price > 0)")
+  @Column(name = "price", nullable = false)
+  @JdbcTypeCode(SqlTypes.NUMERIC)
   private BigDecimal price;
 
   @ManyToOne(fetch = FetchType.LAZY)

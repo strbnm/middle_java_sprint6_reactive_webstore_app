@@ -45,7 +45,7 @@ public class Product {
   private String imageUrl;
 
   @Positive(message = "Цена товара должна быть положительным числом.")
-  @Column(name = "price", nullable = false, columnDefinition = "CHECK (price > 0)")
+  @Column(name = "price", nullable = false)
   @JdbcTypeCode(SqlTypes.NUMERIC)
   private BigDecimal price;
 

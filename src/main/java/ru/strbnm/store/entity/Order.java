@@ -5,7 +5,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -22,7 +24,8 @@ public class Order {
   @Column(name = "id", nullable = false)
   private Long id;
 
-  @Column(name = "total_price", nullable = false, columnDefinition = "CHECK (total_price > 0)")
+  @Column(name = "total_price", nullable = false)
+  @JdbcTypeCode(SqlTypes.NUMERIC)
   private BigDecimal totalPrice;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
