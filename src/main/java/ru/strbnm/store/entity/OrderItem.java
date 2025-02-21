@@ -13,7 +13,6 @@ import org.hibernate.type.SqlTypes;
 @Setter
 @ToString
 @RequiredArgsConstructor
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Table(name = "order_items")

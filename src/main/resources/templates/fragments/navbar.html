@@ -6,41 +6,33 @@
 <th:block th:fragment="navbar">
 
     <nav class="nav-extended blue-grey darken-3">
-
         <div class="nav-wrapper">
-
-            <a th:href="@{/web-store/products}" class="brand-logo"><img class="logo" th:src="@{/imgs/web-store.png}"/>Витрина
-                интернет-магазина</a>
+            <a th:href="@{/products}" class="brand-logo">
+                <img class="logo" th:src="@{/imgs/web-store.png}"/>Витрина интернет-магазина
+            </a>
             <ul id="nav-mobile" class="right hide-on-med-and-down">
                 <li><a class="waves-effect waves-light" th:href="@{/cart}">Корзина</a></li>
                 <li><a class="waves-effect waves-light" th:href="@{/orders}">Заказы</a></li>
                 <li>
-                    <a href="#"
-                       id="filterBtn"
+                    <a href="#" id="filterBtn"
                        class="waves-effect waves-light sideNav-btn"
                        th:classappend="${currentFilters != null and !currentFilters.isEmpty()} ? 'active' : ''">
                         <i class="material-icons">filter_list</i>
                     </a>
                 </li>
-
             </ul>
+
             <div id="filterSection" style="display: none;">
                 <form th:action="@{/products}" method="get" id="filterForm">
-                    <!-- Поисковая строка -->
                     <input type="text" name="text" placeholder="Поиск" th:value="${param.text}"
                            oninput="toggleClearButton()"/>
-
-                    <!-- Фильтрация по цене -->
                     <input type="number" name="price_from" placeholder="Цена от" th:value="${param.price_from}"
                            oninput="toggleClearButton()"/>
                     <input type="number" name="price_to" placeholder="Цена до" th:value="${param.price_to}"
                            oninput="toggleClearButton()"/>
-
-                    <!-- Фильтрация по первой букве -->
                     <input type="text" name="letter" placeholder="Первая буква" maxlength="1" th:value="${param.letter}"
                            oninput="toggleClearButton()"/>
 
-                    <!-- Сортировка -->
                     <select name="sorting" onchange="this.form.submit()">
                         <option th:each="sortOption : ${sortOptions}"
                                 th:value="${sortOption.name()}"
@@ -48,14 +40,11 @@
                                 th:selected="${sortOption.name() == selectedSorting}">
                         </option>
                     </select>
-                    <!-- Скрытые поля для сохранения состояния пагинации и сортировки -->
+
                     <input type="hidden" name="size" th:value="${param.size ?: 10}"/>
-                    <input type="hidden" name="sorting" th:value="${selectedSorting}"/>
-                    <!-- Кнопки -->
+
                     <button type="submit" class="btn">Применить фильтр</button>
-                    <button type="button" class="btn" id="clearButton" onclick="clearFilter()" disabled>Очистить
-                        фильтр
-                    </button>
+                    <button type="button" class="btn" id="clearButton" disabled>Очистить фильтр</button>
                 </form>
             </div>
         </div>

@@ -31,19 +31,19 @@
             <ul class="pagination right">
                 <li th:class="${products.number eq 0} ? 'disabled=&quot;disabled&quot;' : ''">
                     <a th:if="${not products.first}"
-                       th:href="@{/products(page=${products.number-1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting}}">
+                       th:href="@{/products(page=${products.number-1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}">
                         <i class="material-icons">chevron_left</i>
                     </a>
                     <a th:if="${products.first}" href="#"><i class="material-icons">chevron_left</i></a>
                 </li>
                 <li th:each="pageNo : ${#numbers.sequence(0, products.totalPages - 1)}"
                     th:class="${products.number eq pageNo} ? 'active' : 'waves-effect'">
-                    <a th:href="@{/products(page=${pageNo}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting}}"
+                    <a th:href="@{/products(page=${pageNo}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}"
                        th:text="${pageNo + 1}"></a>
                 </li>
                 <li th:class="${products.number + 1 ge products.totalPages} ? 'disabled=&quot;disabled&quot;' : ''">
                     <a th:if="${not products.last}"
-                       th:href="@{/products(page=${products.number+1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting}}">
+                       th:href="@{/products(page=${products.number+1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}">
                         <i class="material-icons">chevron_right</i>
                     </a>
                     <a th:if="${products.last}" href="#"><i class="material-icons">chevron_right</i></a>
@@ -60,48 +60,49 @@
         // Инициализация Materialize select с множественным выбором
         $('select').material_select();
 
-        // Показать или скрыть секцию фильтра
         $('#filterBtn').click(function(e) {
             e.preventDefault();
             $('#filterSection').toggle();
         });
 
-      function toggleClearButton() {
-          const fields = ['text', 'price_from', 'price_to', 'letter'];
-          const clearButton = $('#clearButton');
-          clearButton.prop('disabled', fields.every(field => $(`input[name="${field}"]`).val().trim() === ''));
-      }
+        function toggleClearButton() {
+            const clearButton = $('#clearButton');
+            const hasValues = $('#filterForm input').filter(function () {
+                return this.value.trim() !== '';
+            }).length > 0;
+            clearButton.prop('disabled', !hasValues);
+        }
 
-      function clearFilter() {
-          $('#filterForm input').val('');
-          $('#filterForm').submit();
-      }
+        function clearFilter() {
+            $('#filterForm input').val('');
+            $('#filterForm').submit();
+        }
 
-      toggleClearButton();
+        toggleClearButton();
 
-      $('.add-to-cart').on('click', function () {
-          const productId = $(this).data('product-id');
-          $(this).hide();
-          const controls = $(this).next();
-          controls.show();
+        $('#clearButton').on('click', clearFilter);
 
-          controls.find('.plus').on('click', function () {
-              let input = controls.find('.quantity-input');
-              input.val(parseInt(input.val()) + 1);
-          });
+        $(document).on('click', '.add-to-cart', function () {
+            $(this).hide();
+            $(this).next('.quantity-controls').show();
+        });
 
-          controls.find('.minus').on('click', function () {
-              let input = controls.find('.quantity-input');
-              if (parseInt(input.val()) > 1) input.val(parseInt(input.val()) - 1);
-          });
-      });
+        $(document).on('click', '.plus', function () {
+            let input = $(this).siblings('.quantity-input');
+            input.val(parseInt(input.val()) + 1);
+        });
 
-      $('#size').on('change', function () {
-          const size = $(this).val();
-          const url = new URL(window.location.href);
-          url.searchParams.set('size', size);
-          window.location.href = url;
-      });
+        $(document).on('click', '.minus', function () {
+            let input = $(this).siblings('.quantity-input');
+            if (parseInt(input.val()) > 1) input.val(parseInt(input.val()) - 1);
+        });
+
+        $('#size').on('change', function () {
+            const size = $(this).val();
+            const url = new URL(window.location.href);
+            url.searchParams.set('size', size);
+            window.location.href = url;
+        });
     });
 </script>
 </body>
