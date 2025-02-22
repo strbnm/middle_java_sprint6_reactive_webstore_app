@@ -60,17 +60,34 @@
         // Инициализация Materialize select с множественным выбором
         $('select').material_select();
 
+        // Проверяем, был ли фильтр открыт перед перезагрузкой страницы
+        if (localStorage.getItem('filterVisible') === 'true') {
+            $('#filterSection').show();
+        }
+
+        // Обработчик клика на кнопку фильтра (переключение видимости)
         $('#filterBtn').click(function(e) {
             e.preventDefault();
-            $('#filterSection').toggle();
+            $('#filterSection').slideToggle();
+
+            // Сохраняем состояние в localStorage
+            if ($('#filterSection').is(':visible')) {
+                localStorage.setItem('filterVisible', 'true');
+            } else {
+                localStorage.setItem('filterVisible', 'false');
+            }
         });
 
         function toggleClearButton() {
             const clearButton = $('#clearButton');
-            const hasValues = $('#filterForm input').filter(function () {
+            const filterBtn = $('#filterBtn');
+            const hasValues = $('#filterForm input:not([type="hidden"])').filter(function () {
                 return this.value.trim() !== '';
             }).length > 0;
             clearButton.prop('disabled', !hasValues);
+
+            // Добавляем или удаляем класс "active" у кнопки фильтра
+            filterBtn.toggleClass('active', hasValues);
         }
 
         function clearFilter() {
@@ -78,23 +95,70 @@
             $('#filterForm').submit();
         }
 
+        $('#filterForm').submit(function() {
+            toggleClearButton();
+        });
+
+        // Обработчик очистки фильтра (не скрываем фильтр)
+        $('#clearButton').click(function(e) {
+            e.preventDefault();
+            $('#filterForm input:not([type="hidden"])').val('');
+            localStorage.setItem('filterVisible', 'true');  // Сохраняем, что фильтр был открыт
+            $('#filterForm').submit(); // Отправляем форму (обновляет URL)
+        });
+
         toggleClearButton();
+        $('#filterForm input').on('input', toggleClearButton);
 
-        $('#clearButton').on('click', clearFilter);
+        $('.add-to-cart').on('click', function () {
+            const button = $(this);
+            const productId = button.data('product-id');
 
-        $(document).on('click', '.add-to-cart', function () {
-            $(this).hide();
-            $(this).next('.quantity-controls').show();
+            $.ajax({
+                url: '/cart',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ productId: productId, quantity: 1 }),
+                success: function (response) {
+                    button.hide();
+                    const controls = button.siblings('.quantity-controls');
+                    controls.show();
+                    controls.find('.quantity-input').val(response.quantity).data('cart-item-id', response.id);
+                },
+                error: function () {
+                    alert('Ошибка при добавлении в корзину.');
+                }
+            });
         });
 
-        $(document).on('click', '.plus', function () {
-            let input = $(this).siblings('.quantity-input');
-            input.val(parseInt(input.val()) + 1);
-        });
+        $(document).on('click', '.plus, .minus', function () {
+            const button = $(this);
+            const controls = button.closest('.quantity-controls');
+            const input = controls.find('.quantity-input');
+            let count = parseInt(input.val());
+            if (button.hasClass('plus')) count++;
+            else count--;
 
-        $(document).on('click', '.minus', function () {
-            let input = $(this).siblings('.quantity-input');
-            if (parseInt(input.val()) > 1) input.val(parseInt(input.val()) - 1);
+            const cartItemId = input.data('cart-item-id');
+            const productId = button.closest('.product-row').find('.add-to-cart').data('product-id');
+
+            $.ajax({
+                url: '/cart',
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ id: cartItemId, productId: productId, quantity: count }),
+                success: function (response) {
+                    if (response.quantity === 0) {
+                        controls.hide();
+                        controls.siblings('.add-to-cart').show();
+                    } else {
+                        input.val(response.quantity);
+                    }
+                },
+                error: function () {
+                    alert('Ошибка при обновлении количества.');
+                }
+            });
         });
 
         $('#size').on('change', function () {

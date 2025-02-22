@@ -9,14 +9,28 @@
                  alt="placeholder"/>
             <img th:if="${product.imageUrl != null}" class="circle"
                  th:src="@{/product_image_dir/{img}(img=${product.imageUrl})}" alt="Product Image"/>
-            <span class="title" th:text="${product.name}" th:onclick="@{/products/{productId}(productId=${product.id})}"
+
+            <span class="title" th:text="${product.name}"
+                  th:attr="onclick='window.location.href=\'' + @{/products/{productId}(productId=${product.id})} + '\''"
                   style="cursor:pointer;"></span>
+
             <p th:text="'Цена: ' + ${product.price} + ' руб.'"></p>
-            <button class="btn add-to-cart" th:attr="data-product-id=${product.id}">В корзину</button>
-            <div class="quantity-controls" style="display:none;">
-                <button class="btn minus">-</button>
-                <input type="number" min="1" value="1" class="quantity-input"/>
-                <button class="btn plus">+</button>
+
+            <!-- Контейнер для кнопки "В корзину" и блока количества -->
+            <div class="cart-action">
+                <!-- Кнопка "В корзину" -->
+                <button class="btn add-to-cart" th:attr="data-product-id=${product.id}">В корзину</button>
+
+                <!-- Блок управления количеством (горизонтально) -->
+                <div class="quantity-controls" style="display: none;">
+                    <a href="#" class="cart-btn minus">
+                        <i class="material-icons green26A69A md-24">remove_circle</i>
+                    </a>
+                    <input type="number" min="0" value="1" class="quantity-input" disabled/>
+                    <a href="#" class="cart-btn plus">
+                        <i class="material-icons green26A69A md-24">add_circle</i>
+                    </a>
+                </div>
             </div>
         </li>
     </ul>
