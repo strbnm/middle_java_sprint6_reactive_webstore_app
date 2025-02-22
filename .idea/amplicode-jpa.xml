@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="AmplicodeJpaIdeaProjectConfig">
+  <component name="AmplicodeJpaIdeaProjectConfig" snapshotDbType="POSTGRES" ddlActionDbType="postgres">
     <option name="defaultUnitInitialized" value="true" />
     <option name="renamerInitialized" value="true" />
+    <option name="isSnapshotDb" value="false" />
+    <option name="snapshotModelValue" value="Default" />
+    <option name="updateChangeLogPath" value="src/main/resources/db/changelog/db.changelog-master.xml" />
+    <option name="updateDbConnectionName" value="b7b8e58b-fc83-499b-af1e-8f9505a98f46" />
+    <option name="updateLogLevel" value="DEBUG" />
   </component>
 </project>
