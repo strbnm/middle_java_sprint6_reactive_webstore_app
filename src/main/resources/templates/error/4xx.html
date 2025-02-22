@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header(${error})}"></head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid error">
+    <div class="row">
+        <div class="col l12 center">
+            <th:block th:switch="${error}">
+                <h1 th:text="${error}"></h1>
+                <div th:case="'Not Found'">
+                    <img src="/imgs/error/404.png"/>
+                </div>
+                <div th:case="'Bad Request'">
+                    <img src="/imgs/error/400.png"/>
+                </div>
+            </th:block>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>
