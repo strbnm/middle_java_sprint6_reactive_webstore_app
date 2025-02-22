@@ -3,6 +3,7 @@ package ru.strbnm.store.controller;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import ru.strbnm.store.dto.CartItemDto;
 import ru.strbnm.store.dto.ProductDto;
 import ru.strbnm.store.service.CartService;
 import ru.strbnm.store.service.OrderService;
@@ -44,14 +46,22 @@ public class WebStoreController {
       @RequestParam(value = "price_to", required = false) BigDecimal priceTo,
       @RequestParam(value = "letter", required = false) String letter,
       @RequestParam(value = "sorting", defaultValue = "NAME_ASC") ProductSortEnum productSort,
-      Model model) {
+      Model m) {
     Pageable pageRequest = PageRequest.of(page, size, productSort.getSortExpression());
     Page<ProductDto> products =
         productService.getFilteredProducts(searchText, priceFrom, priceTo, letter, pageRequest);
-    model.addAttribute("products", products);
-    model.addAttribute("size", size);
-    model.addAttribute("sortOptions", ProductSortEnum.values());
-    model.addAttribute("selectedSorting", productSort.name());
+
+    // Преобразуем список корзины в Map
+    Map<Long, CartItemDto> cartItemMap = cartService.getCartItemMap();
+
+    // Вычисляем сумму товаров в корзине
+    int totalQuantity = cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
+    m.addAttribute("products", products);
+    m.addAttribute("size", size);
+    m.addAttribute("sortOptions", ProductSortEnum.values());
+    m.addAttribute("selectedSorting", productSort.name());
+    m.addAttribute("cartItemMap", cartItemMap);
+    m.addAttribute("totalQuantity", totalQuantity);
     return "products/showcase";
   }
 }

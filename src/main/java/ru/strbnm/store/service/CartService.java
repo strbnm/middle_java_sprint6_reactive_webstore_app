@@ -1,6 +1,7 @@
 package ru.strbnm.store.service;
 
 import java.util.List;
+import java.util.Map;
 import org.springframework.transaction.annotation.Transactional;
 import ru.strbnm.store.dto.CartDto;
 import ru.strbnm.store.dto.CartInfoDto;
@@ -23,4 +24,6 @@ public interface CartService {
 
   @Transactional
   CartInfoDto getCartInfo();
+
+  Map<Long, CartItemDto> getCartItemMap();
 }

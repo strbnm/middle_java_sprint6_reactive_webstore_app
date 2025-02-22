@@ -2,7 +2,9 @@ package ru.strbnm.store.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,6 +101,12 @@ public class CartServiceImpl implements CartService {
     List<CartItem> cartItems = cartItemRepository.findAll();
     BigDecimal cartAmount = calculateCartAmount(cartItems);
     return new CartInfoDto(cartItems.size(), cartAmount);
+  }
+
+  @Override
+  public Map<Long, CartItemDto> getCartItemMap() {
+    List<CartItemDto> cartItems = getCartItems();
+    return cartItems.stream().collect(Collectors.toMap(CartItemDto::getProductId, item -> item));
   }
 
   private BigDecimal calculateCartAmount(List<CartItem> cartItems) {

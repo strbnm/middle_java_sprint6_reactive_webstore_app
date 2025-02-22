@@ -10,7 +10,11 @@
                 <img class="logo" th:src="@{/imgs/web-store.png}"/>Витрина интернет-магазина
             </a>
             <ul id="nav-mobile" class="right hide-on-med-and-down">
-                <li><a class="waves-effect waves-light" th:href="@{/cart}">Корзина</a></li>
+                <li><a id="cartLink" class="waves-effect waves-light" th:href="@{/cart}">Корзина<span id="cartBadge"
+                                                                                                      th:if="${totalQuantity != null and totalQuantity > 0}"
+                                                                                                      class="badge red"
+                                                                                                      th:text="${totalQuantity}"></span></a>
+                </li>
                 <li><a class="waves-effect waves-light" th:href="@{/orders}">Заказы</a></li>
                 <li>
                     <a href="#" id="filterBtn" class="waves-effect waves-light sideNav-btn">

@@ -4,7 +4,7 @@
 
 <div th:fragment="feed">
     <ul class="collection">
-        <li class="collection-item avatar product-row" th:each="product : ${products.content}">
+        <li class="collection-item avatar product-row" th:each="product : ${products}">
             <img th:if="${product.imageUrl == null}" class="circle" th:src="@{/imgs/stub_product_img.png}"
                  alt="placeholder"/>
             <img th:if="${product.imageUrl != null}" class="circle"
@@ -16,17 +16,25 @@
 
             <p th:text="'Цена: ' + ${product.price} + ' руб.'"></p>
 
-            <!-- Контейнер для кнопки "В корзину" и блока количества -->
+            <!-- Проверяем, есть ли товар в корзине -->
             <div class="cart-action">
-                <!-- Кнопка "В корзину" -->
-                <button class="btn add-to-cart" th:attr="data-product-id=${product.id}">В корзину</button>
+                <!-- Кнопка "В корзину" (по умолчанию скрыта, если товар в корзине) -->
+                <button class="btn add-to-cart" th:attr="data-product-id=${product.id}"
+                        th:style="${cartItemMap.containsKey(product.id)} ? 'display: none;' : ''">
+                    В корзину
+                </button>
 
-                <!-- Блок управления количеством (горизонтально) -->
-                <div class="quantity-controls" style="display: none;">
+                <!-- Блок управления количеством (по умолчанию скрыт, если товара нет в корзине) -->
+                <div class="quantity-controls"
+                     th:style="${cartItemMap.containsKey(product.id)} ? '' : 'display: none;'">
                     <a href="#" class="cart-btn minus">
                         <i class="material-icons green26A69A md-24">remove_circle</i>
                     </a>
-                    <input type="number" min="0" value="1" class="quantity-input" disabled/>
+                    <input type="number" min="0" class="quantity-input"
+                           th:value="${cartItemMap.containsKey(product.id) ? cartItemMap.get(product.id).quantity : 1}"
+                           th:attr="data-cart-item-id=${cartItemMap.containsKey(product.id) ? cartItemMap.get(product.id).id : ''},
+                        data-product-id=${product.id}"
+                           disabled/>
                     <a href="#" class="cart-btn plus">
                         <i class="material-icons green26A69A md-24">add_circle</i>
                     </a>
