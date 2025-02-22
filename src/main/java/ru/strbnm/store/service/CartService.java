@@ -1,17 +1,26 @@
 package ru.strbnm.store.service;
 
 import java.util.List;
-import ru.strbnm.store.dto.CartDTO;
-import ru.strbnm.store.dto.CartItemDTO;
+import org.springframework.transaction.annotation.Transactional;
+import ru.strbnm.store.dto.CartDto;
+import ru.strbnm.store.dto.CartInfoDto;
+import ru.strbnm.store.dto.CartItemDto;
 
 public interface CartService {
-  List<CartItemDTO> getCartItems();
+  List<CartItemDto> getCartItems();
 
-  void addToCart(Long productId, int quantity);
+  @Transactional
+  CartItemDto addToCart(Long productId, int quantity);
 
-  void updateCartItemQuantity(Long productId, int quantity);
+  @Transactional
+  CartItemDto updateCartItem(Long id, Long productId, int quantity);
 
+  @Transactional
   void removeFromCart(Long productId);
 
-  CartDTO getCartSummary();
+  @Transactional
+  CartDto getCartSummary();
+
+  @Transactional
+  CartInfoDto getCartInfo();
 }

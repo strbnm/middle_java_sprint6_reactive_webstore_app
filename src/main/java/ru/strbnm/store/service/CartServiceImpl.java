@@ -2,11 +2,13 @@ package ru.strbnm.store.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.strbnm.store.dto.CartDTO;
-import ru.strbnm.store.dto.CartItemDTO;
+import ru.strbnm.store.dto.CartDto;
+import ru.strbnm.store.dto.CartInfoDto;
+import ru.strbnm.store.dto.CartItemDto;
 import ru.strbnm.store.entity.CartItem;
 import ru.strbnm.store.entity.Product;
 import ru.strbnm.store.mapper.CartItemMapper;
@@ -30,31 +32,48 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public List<CartItemDTO> getCartItems() {
+  public List<CartItemDto> getCartItems() {
     return cartItemMapper.toDTOs(cartItemRepository.findAll());
   }
 
   @Transactional
   @Override
-  public void addToCart(Long productId, int quantity) {
+  public CartItemDto addToCart(Long productId, int quantity) {
     Product product =
         productRepository
             .findById(productId)
             .orElseThrow(() -> new RuntimeException("Товар не найден."));
-    CartItem cartItem = CartItem.builder().product(product).quantity(quantity).build();
-    cartItemRepository.save(cartItem);
+
+    Optional<CartItem> existingItem = cartItemRepository.findByProduct(product);
+
+    CartItem cartItem;
+    if (existingItem.isPresent()) {
+      cartItem = existingItem.get();
+      cartItem.setQuantity(cartItem.getQuantity() + quantity);
+    } else {
+      cartItem = CartItem.builder().product(product).quantity(quantity).build();
+    }
+
+    CartItem savedItem = cartItemRepository.save(cartItem);
+    return cartItemMapper.toDto(savedItem);
   }
 
   @Transactional
   @Override
-  public void updateCartItemQuantity(Long productId, int quantity) {
+  public CartItemDto updateCartItem(Long id, Long productId, int quantity) {
     CartItem cartItem =
-        cartItemRepository.findAll().stream()
-            .filter(item -> item.getProduct().getId().equals(productId))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Позиция корзины не найдена."));
+        cartItemRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Элемент корзины не найден"));
+
+    if (quantity == 0) {
+      cartItemRepository.delete(cartItem);
+      return CartItemDto.builder().id(cartItem.getId()).productId(productId).quantity(0).build();
+    }
+
     cartItem.setQuantity(quantity);
-    cartItemRepository.save(cartItem);
+    CartItem updatedItem = cartItemRepository.save(cartItem);
+    return cartItemMapper.toDto(updatedItem);
   }
 
   @Transactional
@@ -66,13 +85,25 @@ public class CartServiceImpl implements CartService {
         .ifPresent(cartItemRepository::delete);
   }
 
+  @Transactional
   @Override
-  public CartDTO getCartSummary() {
-    List<CartItemDTO> cartItemDTOList = getCartItems();
-    BigDecimal cartAmount =
-        cartItemDTOList.stream()
-            .map(item -> item.getProductPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    return new CartDTO(cartItemDTOList, cartAmount);
+  public CartDto getCartSummary() {
+    List<CartItem> cartItems = cartItemRepository.findAll();
+    BigDecimal cartAmount = calculateCartAmount(cartItems);
+    return new CartDto(cartItems, cartAmount);
+  }
+
+  @Transactional
+  @Override
+  public CartInfoDto getCartInfo() {
+    List<CartItem> cartItems = cartItemRepository.findAll();
+    BigDecimal cartAmount = calculateCartAmount(cartItems);
+    return new CartInfoDto(cartItems.size(), cartAmount);
+  }
+
+  private BigDecimal calculateCartAmount(List<CartItem> cartItems) {
+    return cartItems.stream()
+        .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 }
