@@ -43,3 +43,4 @@ out/
 *.properties
 /.idea/
 /gradle/wrapper/gradle-wrapper.jar
+/amplicode.xml
