@@ -5,7 +5,7 @@ import java.util.List;
 import lombok.Value;
 
 @Value
-public class OrderSummaryDTO {
-  List<OrderDTO> orderDTOList;
+public class OrderSummaryDto {
+  List<OrderDto> orderDtoList;
   BigDecimal totalAmount;
 }

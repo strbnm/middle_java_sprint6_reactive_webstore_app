@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.strbnm.store.dto.OrderDTO;
-import ru.strbnm.store.dto.OrderSummaryDTO;
+import ru.strbnm.store.dto.OrderDto;
+import ru.strbnm.store.dto.OrderSummaryDto;
 import ru.strbnm.store.entity.CartItem;
 import ru.strbnm.store.entity.Order;
 import ru.strbnm.store.entity.OrderItem;
@@ -36,7 +36,7 @@ public class OrderServiceImpl implements OrderService {
 
   @Transactional
   @Override
-  public OrderDTO createOrder() {
+  public OrderDto createOrder() {
     List<CartItem> cartItems = cartItemRepository.findAll();
     if (cartItems.isEmpty()) {
       throw new RuntimeException("Корзина пустая.");
@@ -73,12 +73,12 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public List<OrderDTO> getAllOrders() {
+  public List<OrderDto> getAllOrders() {
     return orderMapper.toDTOs(orderRepository.findAll());
   }
 
   @Override
-  public OrderDTO getOrderById(Long orderId) {
+  public OrderDto getOrderById(Long orderId) {
     return orderRepository
         .findById(orderId)
         .map(orderMapper::toDTO)
@@ -86,10 +86,10 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public OrderSummaryDTO getOrdersSummary() {
-    List<OrderDTO> orderDTOList = getAllOrders();
+  public OrderSummaryDto getOrdersSummary() {
+    List<OrderDto> orderDtoList = getAllOrders();
     BigDecimal totalAmount =
-        orderDTOList.stream().map(OrderDTO::getTotalPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
-    return new OrderSummaryDTO(orderDTOList, totalAmount);
+        orderDtoList.stream().map(OrderDto::getTotalPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+    return new OrderSummaryDto(orderDtoList, totalAmount);
   }
 }

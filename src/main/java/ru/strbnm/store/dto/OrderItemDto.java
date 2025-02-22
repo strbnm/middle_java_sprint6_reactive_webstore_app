@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import lombok.*;
 
 @Value
-public class OrderItemDTO {
+public class OrderItemDto {
   Long productId;
   String productName;
   String productImageUrl;

@@ -10,9 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import ru.strbnm.store.dto.ProductDTO;
+import org.springframework.web.bind.annotation.*;
+import ru.strbnm.store.dto.ProductDto;
 import ru.strbnm.store.service.CartService;
 import ru.strbnm.store.service.OrderService;
 import ru.strbnm.store.service.ProductService;
@@ -47,7 +46,7 @@ public class WebStoreController {
       @RequestParam(value = "sorting", defaultValue = "NAME_ASC") ProductSortEnum productSort,
       Model model) {
     Pageable pageRequest = PageRequest.of(page, size, productSort.getSortExpression());
-    Page<ProductDTO> products =
+    Page<ProductDto> products =
         productService.getFilteredProducts(searchText, priceFrom, priceTo, letter, pageRequest);
     model.addAttribute("products", products);
     model.addAttribute("size", size);
@@ -56,3 +55,5 @@ public class WebStoreController {
     return "products/showcase";
   }
 }
+
+

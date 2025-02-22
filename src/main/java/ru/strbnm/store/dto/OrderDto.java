@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderDTO {
+public class OrderDto {
   private Long id;
   private BigDecimal totalPrice;
-  private List<OrderItemDTO> items;
+  private List<OrderItemDto> items;
 }

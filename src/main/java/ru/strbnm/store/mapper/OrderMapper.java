@@ -3,14 +3,14 @@ package ru.strbnm.store.mapper;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
-import ru.strbnm.store.dto.OrderDTO;
+import ru.strbnm.store.dto.OrderDto;
 import ru.strbnm.store.entity.Order;
 
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
   OrderMapper INSTANCE = Mappers.getMapper(OrderMapper.class);
 
-  OrderDTO toDTO(Order order);
+  OrderDto toDTO(Order order);
 
-  List<OrderDTO> toDTOs(List<Order> orders);
+  List<OrderDto> toDTOs(List<Order> orders);
 }

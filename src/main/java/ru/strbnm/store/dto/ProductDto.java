@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import lombok.*;
 
 @Value
-public class ProductDTO {
+public class ProductDto {
   Long id;
 
   @NotBlank(message = "Наименование товара не должно быть пустым.")

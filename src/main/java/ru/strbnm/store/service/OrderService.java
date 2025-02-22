@@ -1,15 +1,15 @@
 package ru.strbnm.store.service;
 
 import java.util.List;
-import ru.strbnm.store.dto.OrderDTO;
-import ru.strbnm.store.dto.OrderSummaryDTO;
+import ru.strbnm.store.dto.OrderDto;
+import ru.strbnm.store.dto.OrderSummaryDto;
 
 public interface OrderService {
-  OrderDTO createOrder();
+  OrderDto createOrder();
 
-  List<OrderDTO> getAllOrders();
+  List<OrderDto> getAllOrders();
 
-  OrderDTO getOrderById(Long orderId);
+  OrderDto getOrderById(Long orderId);
 
-  OrderSummaryDTO getOrdersSummary();
+  OrderSummaryDto getOrdersSummary();
 }

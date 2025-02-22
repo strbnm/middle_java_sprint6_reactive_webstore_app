@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import ru.strbnm.store.dto.ProductDTO;
+import ru.strbnm.store.dto.ProductDto;
 import ru.strbnm.store.entity.Product;
 import ru.strbnm.store.mapper.ProductMapper;
 import ru.strbnm.store.repository.ProductRepository;
@@ -23,7 +23,7 @@ public class ProductServiceImpl implements ProductService {
     this.productMapper = productMapper;
   }
 
-  public Page<ProductDTO> getFilteredProducts(
+  public Page<ProductDto> getFilteredProducts(
       String searchText,
       BigDecimal priceFrom,
       BigDecimal priceTo,
@@ -39,7 +39,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public ProductDTO getProductById(Long productId) {
+  public ProductDto getProductById(Long productId) {
     Product existsProduct =
         productRepository
             .findById(productId)
@@ -55,7 +55,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public ProductDTO saveProduct(Product product) {
+  public ProductDto saveProduct(Product product) {
     return productMapper.toDTO(productRepository.save(product));
   }
 
