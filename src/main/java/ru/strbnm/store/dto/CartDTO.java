@@ -7,6 +7,6 @@ import ru.strbnm.store.entity.CartItem;
 
 @Value
 public class CartDto {
-  List<CartItem> cartItemsCount;
+  List<CartItem> cartItems;
   BigDecimal cartAmount;
 }
