@@ -12,10 +12,13 @@
             <ul id="nav-mobile" class="right hide-on-med-and-down">
                 <li th:if="${!(isShowCase != null and isShowCase)}"><a class="waves-effect waves-light"
                                                                        th:href="@{/products}">Каталог</a></li>
-                <li><a id="cartLink" class="waves-effect waves-light" th:href="@{/cart}">Корзина<span id="cartBadge"
-                                                                                                      th:if="${totalQuantity != null and totalQuantity > 0}"
-                                                                                                      class="badge red"
-                                                                                                      th:text="${totalQuantity}"></span></a>
+                <li>
+                    <a id="cartLink" class="waves-effect waves-light" th:href="@{/cart}">
+                        Корзина
+                        <span id="cartBadge" th:if="${totalQuantity != null and totalQuantity > 0}" class="badge red"
+                              th:text="${totalQuantity}">
+                        </span>
+                    </a>
                 </li>
                 <li><a class="waves-effect waves-light" th:href="@{/orders}">Заказы</a></li>
                 <th:block th:if="${isShowCase != null and isShowCase}">
