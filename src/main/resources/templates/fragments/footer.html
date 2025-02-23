@@ -31,6 +31,96 @@
             integrity="sha256-AlTido85uXPlSyyaZNsjJXeCs07eSv3r43kyCVc8ChI="
             crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.add-to-cart').on('click', function () {
+                const button = $(this);
+                const productId = button.data('product-id');
+
+                $.ajax({
+                    url: '/cart',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ productId: productId, quantity: 1 }),
+                    success: function (response) {
+                        const cartAction = button.closest('.cart-action');
+                        button.hide(); // Скрываем кнопку "В корзину"
+
+                        // Отображаем блок управления количеством
+                        const controls = cartAction.find('.quantity-controls');
+                        controls.show();
+
+                        // Устанавливаем новое значение и cart-item-id
+                        controls.find('.quantity-input')
+                            .val(response.quantity)
+                            .attr('data-cart-item-id', response.id);
+
+                        // Обновляем или создаем cartBadge
+                        updateCartBadge(1);
+                    },
+                    error: function () {
+                        alert('Ошибка при добавлении в корзину.');
+                    }
+                });
+            });
+
+            $(document).on('click', '.plus, .minus', function (event) {
+                event.preventDefault(); // Отключаем переход по ссылке "#"
+
+                const button = $(this);
+                const controls = button.closest('.quantity-controls');
+                const input = controls.find('.quantity-input');
+                let count = parseInt(input.val());
+
+                if (button.hasClass('plus')) count++;
+                else count--;
+
+                const cartItemId = input.attr('data-cart-item-id');
+                const productId = input.attr('data-product-id');
+
+                $.ajax({
+                    url: '/cart',
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: cartItemId, productId: productId, quantity: count }),
+                    success: function (response) {
+                        const cartAction = controls.closest('.cart-action');
+
+                        if (response.quantity === 0) {
+                            controls.hide(); // Скрываем блок управления количеством
+                            cartAction.find('.add-to-cart').show(); // Показываем кнопку "В корзину"
+                            updateCartBadge(-1); // Уменьшаем счетчик корзины
+                        } else {
+                            input.val(response.quantity);
+                            updateCartBadge(button.hasClass('plus') ? 1 : -1);
+                        }
+                    },
+                    error: function () {
+                        alert('Ошибка при обновлении количества.');
+                    }
+                });
+            });
+
+            // Функция обновления cartBadge
+            function updateCartBadge(change) {
+                let cartBadge = $('#cartBadge');
+
+                if (cartBadge.length === 0 && change > 0) {
+                    // Если cartBadge не существует и корзина не пустая - создаем его
+                    $('#cartLink').append('<span id="cartBadge" class="badge red">1</span>');
+                } else {
+                    let currentCount = parseInt(cartBadge.text()) || 0;
+                    let newCount = currentCount + change;
+
+                    if (newCount > 0) {
+                        cartBadge.text(newCount);
+                    } else {
+                        cartBadge.remove(); // Удаляем badge, если товаров больше нет
+                    }
+                }
+            }
+        });
+    </script>
 </th:block>
 </body>
 </html>

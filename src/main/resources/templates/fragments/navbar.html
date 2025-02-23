@@ -10,39 +10,43 @@
                 <img class="logo" th:src="@{/imgs/web-store.png}"/>Витрина интернет-магазина
             </a>
             <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li th:if="${!(isShowCase != null and isShowCase)}"><a class="waves-effect waves-light"
+                                                                       th:href="@{/products}">Каталог</a></li>
                 <li><a id="cartLink" class="waves-effect waves-light" th:href="@{/cart}">Корзина<span id="cartBadge"
                                                                                                       th:if="${totalQuantity != null and totalQuantity > 0}"
                                                                                                       class="badge red"
                                                                                                       th:text="${totalQuantity}"></span></a>
                 </li>
                 <li><a class="waves-effect waves-light" th:href="@{/orders}">Заказы</a></li>
-                <li>
-                    <a href="#" id="filterBtn" class="waves-effect waves-light sideNav-btn">
-                        <i class="material-icons">filter_list</i>
-                    </a>
-                </li>
-                <li>
-                    <form method="get" th:action="@{/products}">
-                        <select name="sorting" id="sortingSelect" onchange="this.form.submit()">
-                            <option th:each="sortOption : ${sortOptions}"
-                                    th:value="${sortOption.name()}"
-                                    th:text="${sortOption.description}"
-                                    th:selected="${sortOption.name() == selectedSorting}">
-                            </option>
-                        </select>
-                        <input type="hidden" name="size" th:value="${param.size}"/>
-                        <input type="hidden" name="text" th:value="${param.text}"/>
-                        <input type="hidden" name="price_from" th:value="${param.price_from}"/>
-                        <input type="hidden" name="price_to" th:value="${param.price_to}"/>
-                        <input type="hidden" name="letter" th:value="${param.letter}"/>
-                    </form>
-                </li>
+                <th:block th:if="${isShowCase != null and isShowCase}">
+                    <li>
+                        <a href="#" id="filterBtn" class="waves-effect waves-light sideNav-btn">
+                            <i class="material-icons">filter_list</i>
+                        </a>
+                    </li>
+                    <li>
+                        <form method="get" th:action="@{/products}">
+                            <select name="sorting" id="sortingSelect" onchange="this.form.submit()">
+                                <option th:each="sortOption : ${sortOptions}"
+                                        th:value="${sortOption.name()}"
+                                        th:text="${sortOption.description}"
+                                        th:selected="${sortOption.name() == selectedSorting}">
+                                </option>
+                            </select>
+                            <input type="hidden" name="size" th:value="${param.size}"/>
+                            <input type="hidden" name="text" th:value="${param.text}"/>
+                            <input type="hidden" name="price_from" th:value="${param.price_from}"/>
+                            <input type="hidden" name="price_to" th:value="${param.price_to}"/>
+                            <input type="hidden" name="letter" th:value="${param.letter}"/>
+                        </form>
+                    </li>
+                </th:block>
             </ul>
         </div>
     </nav>
 
     <!-- Блок фильтров (Теперь вне navbar) -->
-    <div id="filterSection" class="filter-container">
+    <div id="filterSection" class="filter-container" style="display: none;">
         <form th:action="@{/products}" method="get" id="filterForm" class="filter-form">
             <div class="input-group">
                 <input type="text" name="text" placeholder="Поиск" th:value="${param.text}"/>
@@ -50,7 +54,8 @@
                 <input type="number" name="price_to" placeholder="Цена до" th:value="${param.price_to}"/>
                 <input type="text" name="letter" placeholder="Буква" maxlength="1" th:value="${param.letter}"/>
 
-                <button type="submit" class="btn"><i class="material-icons md-18">keyboard_return</i></button>
+                <button type="submit" class="btn" id="applyButton"><i class="material-icons md-18">keyboard_return</i>
+                </button>
                 <button type="button" class="btn clear-btn" id="clearButton" disabled><i class="material-icons md-18">clear</i>
                 </button>
             </div>
