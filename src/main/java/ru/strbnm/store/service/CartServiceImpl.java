@@ -80,11 +80,8 @@ public class CartServiceImpl implements CartService {
 
   @Transactional
   @Override
-  public void removeFromCart(Long productId) {
-    cartItemRepository.findAll().stream()
-        .filter(item -> item.getProduct().getId().equals(productId))
-        .findFirst()
-        .ifPresent(cartItemRepository::delete);
+  public void removeFromCart(Long cartItemId) {
+    cartItemRepository.deleteById(cartItemId);
   }
 
   @Transactional

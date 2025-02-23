@@ -17,7 +17,7 @@ public interface CartService {
   CartItemDto updateCartItem(Long id, Long productId, int quantity);
 
   @Transactional
-  void removeFromCart(Long productId);
+  void removeFromCart(Long cartItemId);
 
   @Transactional
   CartDto getCartSummary();
