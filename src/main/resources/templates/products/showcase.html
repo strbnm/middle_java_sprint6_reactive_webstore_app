@@ -109,8 +109,6 @@
             localStorage.removeItem(storageKey); // Удаляем из localStorage
         });
 
-        toggleClearButton();
-
         $('#size').on('change', function () {
             const size = $(this).val();
             const url = new URL(window.location.href);
@@ -119,6 +117,8 @@
         });
 
         const storageKey = "filterData"; // Ключ в localStorage
+        const sortingKey = "sorting"; // Ключ в localStorage для сортировки
+        const sizeKey = "size"; // Ключ в localStorage для количества элементов
 
         // Функция загрузки значений из localStorage
         function loadFilterValues() {
@@ -147,12 +147,6 @@
             localStorage.setItem(storageKey, JSON.stringify(filterData));
         }
 
-        // Загружаем данные при открытии страницы
-        loadFilterValues();
-
-        const sortingKey = "sorting"; // Ключ в localStorage для сортировки
-        const sizeKey = "size"; // Ключ в localStorage для количества элементов
-
         function loadSortingAndSize() {
             let sortingValue = localStorage.getItem(sortingKey);
             let sizeValue = localStorage.getItem(sizeKey);
@@ -175,8 +169,10 @@
             localStorage.setItem(sizeKey, $(this).val());
         });
 
+        // Загружаем данные при открытии страницы
         loadSortingAndSize();
-
+        loadFilterValues();
+        toggleClearButton();
     });
 </script>
 </body>
