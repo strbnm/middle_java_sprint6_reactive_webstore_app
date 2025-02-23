@@ -54,16 +54,37 @@ public class WebStoreController {
     // Преобразуем список корзины в Map
     Map<Long, CartItemDto> cartItemMap = cartService.getCartItemMap();
 
-    // Вычисляем сумму товаров в корзине
-    int totalQuantity = cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
+    // Вычисляем сумму количества товаров в корзине
+    int cartTotalQuantity = cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
     m.addAttribute("products", products);
     m.addAttribute("size", size);
     m.addAttribute("sortOptions", ProductSortEnum.values());
     m.addAttribute("selectedSorting", productSort.name());
     m.addAttribute("cartItemMap", cartItemMap);
-    m.addAttribute("totalQuantity", totalQuantity);
+    m.addAttribute("totalQuantity", cartTotalQuantity);
+    m.addAttribute("isShowCase", true);
     return "products/showcase";
   }
+
+  @GetMapping("/products/{id}")
+  public String getProductById(@PathVariable(value = "id") Long productId, Model m) {
+    ProductDto product = productService.getProductById(productId);
+
+    // Преобразуем список корзины в Map
+    Map<Long, CartItemDto> cartItemMap = cartService.getCartItemMap();
+
+    // Вычисляем сумму количества товаров в корзине
+    int cartTotalQuantity = cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
+
+    // Получаем объект корзины, если товар был добавлен в корзину или null
+    CartItemDto cartItem = cartItemMap.get(product.getId());
+    m.addAttribute("product", product);
+    m.addAttribute("cartItem", cartItem);
+    m.addAttribute("totalQuantity", cartTotalQuantity);
+    return "products/show";
+  }
+
+
 }
 
 

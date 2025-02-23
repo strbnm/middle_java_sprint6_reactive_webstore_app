@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header(${product.name})}"></head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<main class="container">
+    <div class="row">
+        <div class="col l0 offset-l1">
+            <div>
+                <h3 th:text="${product.name}"></h3>
+                <br/>
+                <img th:if="${product.imageUrl == null}" class="triangle" th:src="@{/imgs/stub_product_img.png}"
+                     alt="placeholder"/>
+                <img th:if="${product.imageUrl != null}" class="triangle"
+                     th:src="@{/product_image_dir/{img}(img=${product.imageUrl})}" alt="Product Image"/>
+                <hr/>
+                <p th:text="${product.description}" style="white-space: pre-wrap;"></p>
+                <hr/>
+                <p th:text="'Цена: ' + ${product.price} + ' руб.'"></p>
+                <!-- Проверяем, есть ли товар в корзине -->
+                <div class="cart-action">
+                    <!-- Кнопка "В корзину" (по умолчанию скрыта, если товар в корзине) -->
+                    <button class="btn add-to-cart" th:attr="data-product-id=${product.id}"
+                            th:style="${cartItem != null} ? 'display: none;' : ''">
+                        В корзину
+                    </button>
+
+                    <!-- Блок управления количеством (по умолчанию скрыт, если товара нет в корзине) -->
+                    <div class="quantity-controls"
+                         th:style="${cartItem != null} ? '' : 'display: none;'">
+                        <a href="#" class="cart-btn minus">
+                            <i class="material-icons green26A69A md-24">remove_circle</i>
+                        </a>
+                        <input type="number" min="0" class="quantity-input"
+                               th:value="${cartItem != null ? cartItem.quantity : 1}"
+                               th:attr="data-cart-item-id=${cartItem != null ? cartItem.id : ''},
+                        data-product-id=${product.id}"
+                               disabled/>
+                        <a href="#" class="cart-btn plus">
+                            <i class="material-icons green26A69A md-24">add_circle</i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>
