@@ -83,8 +83,6 @@ public class WebStoreController {
     m.addAttribute("totalQuantity", cartTotalQuantity);
     return "products/show";
   }
-
-
 }
 
 
