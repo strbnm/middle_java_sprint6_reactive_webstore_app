@@ -31,7 +31,7 @@
             integrity="sha256-AlTido85uXPlSyyaZNsjJXeCs07eSv3r43kyCVc8ChI="
             crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
-    <script>
+    <script th:if="${cart == null}">
         $(document).ready(function() {
             $('.add-to-cart').on('click', function () {
                 const button = $(this);
@@ -119,6 +119,88 @@
                     }
                 }
             }
+        });
+    </script>
+    <script th:if="${cart != null}">
+        $(document).ready(function() {
+            $(document).on('click', '.plus, .minus', function (event) {
+                event.preventDefault(); // Отключаем переход по ссылке "#"
+
+                const button = $(this);
+                const controls = button.closest('.quantity-controls');
+                const input = controls.find('.quantity-input');
+                const minusButton = controls.find('.minus');
+                let count = parseInt(input.val());
+
+                if (button.hasClass('plus')) count++;
+                else count--;
+
+                const cartItemId = input.attr('data-cart-item-id');
+                const productId = input.attr('data-product-id');
+
+                $.ajax({
+                    url: '/cart',
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: cartItemId, productId: productId, quantity: count }),
+                    success: function (response) {
+                        const cartAction = controls.closest('.cart-action');
+
+                        if (response.quantity <= 1) minusButton.addClass("disabled"); // Делаем неактивной кнопку уменьшения количества
+                        else minusButton.removeClass("disabled");
+
+                        input.val(response.quantity);
+                        updateCartBadge(button.hasClass('plus') ? 1 : -1);
+                    },
+                    error: function () {
+                        alert('Ошибка при обновлении количества.');
+                    }
+                });
+            });
+
+            // Функция обновления cartBadge
+            function updateCartBadge(change) {
+                let cartBadge = $('#cartBadge');
+
+                if (cartBadge.length === 0 && change > 0) {
+                    // Если cartBadge не существует и корзина не пустая - создаем его
+                    $('#cartLink').append('<span id="cartBadge" class="badge red">1</span>');
+                } else {
+                    let currentCount = parseInt(cartBadge.text()) || 0;
+                    let newCount = currentCount + change;
+
+                    if (newCount > 0) {
+                        cartBadge.text(newCount);
+                    } else {
+                        cartBadge.remove(); // Удаляем badge, если товаров больше нет
+                    }
+                }
+            }
+
+            // Обработчик удаления товара из корзины
+            $(document).on("click", ".remove-item", function (event) {
+                event.preventDefault(); // Предотвращаем переход по ссылке "#"
+
+                const button = $(this);
+                const cartItemId = button.attr("data-cart-item-id");
+                const itemRow = button.closest(".cartitem-row");
+                const itemQuantity = parseInt(itemRow.find(".quantity-input").val()) || 1; // Получаем количество удаляемого товара
+
+                $.ajax({
+                    url: "/cart/" + cartItemId,
+                    method: "DELETE",
+                    success: function () {
+                        itemRow.fadeOut(300, function () {
+                            $(this).remove();
+                            updateCartBadge(-itemQuantity); // Уменьшаем cartBadge на количество удаленного товара
+                        });
+                    },
+                    error: function () {
+                        alert("Ошибка при удалении товара.");
+                    }
+                });
+            });
+
         });
     </script>
 </th:block>

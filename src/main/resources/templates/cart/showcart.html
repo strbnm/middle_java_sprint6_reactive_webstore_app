@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Витрина интернет-магазина')}"></head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<main class="container">
+    <h4 class="page-title" th:text="${title != null ? title:'Товары в корзине'}"></h4>
+    <div class="row">
+        <!-- Левый блок: список товаров в корзине (8/12) -->
+        <div id="cartContainer" class="col s8">
+            <div th:replace="~{fragments/cart-item-feed :: feed}"></div>
+        </div>
+
+        <!-- Правый блок: информация о корзине (4/12) -->
+        <div id="cartSummary" class="col s4">
+            <div class="card blue-grey darken-1 white-text">
+                <div class="card-content">
+                    <p>Количество товаров в корзине: <span id="cartItemCount" th:text="${totalQuantity}">0</span></p>
+                    <p>Общая стоимость товаров: <span id="cartTotalPrice" th:text="${cart.cartAmount}">0</span> руб.</p>
+                </div>
+                <div class="card-action">
+                    <a href="/checkout" class="btn green lighten-1 full-width">Оформить заказ</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

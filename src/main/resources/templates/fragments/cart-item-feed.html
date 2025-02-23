@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="feed">
+    <ul class="collection">
+        <li class="collection-item avatar cartitem-row" th:each="cartItem : ${cart.cartItems}">
+            <img th:if="${cartItem.product.imageUrl == null}" class="circle" th:src="@{/imgs/stub_product_img.png}"
+                 alt="placeholder"/>
+            <img th:if="${cartItem.product.imageUrl != null}" class="circle"
+                 th:src="@{/product_image_dir/{img}(img=${cartItem.product.imageUrl})}" alt="Product Image"/>
+
+            <span class="title" th:text="${cartItem.product.name}"
+                  th:attr="onclick='window.location.href=\'' + @{/products/{productId}(productId=${cartItem.product.id})} + '\''"
+                  style="cursor:pointer;"></span>
+
+            <p th:text="'Цена: ' + ${cartItem.product.price} + ' руб.'"></p>
+
+            <!-- Кнопка удаления (в верхнем правом углу) -->
+            <a href="#" class="remove-item" th:attr="data-cart-item-id=${cartItem.id}" title="Удалить товар">
+                <i class="material-icons red-text">clear</i>
+            </a>
+
+            <div class="cart-action">
+                <!-- Блок управления количеством -->
+                <div class="quantity-controls">
+                    <a href="#" class="cart-btn minus"
+                       th:classappend="${cartItem.quantity > 1} ? '' : 'disabled'"
+                    >
+                        <i class="material-icons green26A69A md-24">remove_circle</i>
+                    </a>
+                    <input type="number" min="1" class="quantity-input"
+                           th:value="${cartItem.quantity}"
+                           th:attr="data-cart-item-id=${cartItem.id},
+                        data-product-id=${cartItem.product.id}"
+                           disabled/>
+                    <a href="#" class="cart-btn plus">
+                        <i class="material-icons green26A69A md-24">add_circle</i>
+                    </a>
+                </div>
+            </div>
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>
