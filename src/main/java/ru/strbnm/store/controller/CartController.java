@@ -1,13 +1,14 @@
 package ru.strbnm.store.controller;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.strbnm.store.dto.CartDto;
+import ru.strbnm.store.dto.CartInfoDto;
 import ru.strbnm.store.dto.CartItemDto;
+import ru.strbnm.store.dto.CartItemInfoDto;
 import ru.strbnm.store.entity.CartItem;
 import ru.strbnm.store.service.CartService;
 
@@ -23,26 +24,30 @@ public class CartController {
 
   @PostMapping
   @ResponseBody
-  public ResponseEntity<CartItemDto> addToCart(@RequestBody CartItemDto cartItemDto) {
+  public ResponseEntity<CartItemInfoDto> addToCart(@RequestBody CartItemDto cartItemDto) {
     CartItemDto savedItem =
         cartService.addToCart(cartItemDto.getProductId(), cartItemDto.getQuantity());
-    return ResponseEntity.ok(savedItem);
+    CartItemInfoDto cartItemInfo = getCartItemInfoDto(savedItem);
+    return ResponseEntity.ok(cartItemInfo);
   }
 
   @PutMapping
   @ResponseBody
-  public ResponseEntity<CartItemDto> updateCartItem(@RequestBody CartItemDto cartItemDto) {
+  public ResponseEntity<CartItemInfoDto> updateCartItem(@RequestBody CartItemDto cartItemDto) {
     CartItemDto updatedItem =
         cartService.updateCartItem(
             cartItemDto.getId(), cartItemDto.getProductId(), cartItemDto.getQuantity());
-    return ResponseEntity.ok(updatedItem);
+    CartItemInfoDto cartItemInfo = getCartItemInfoDto(updatedItem);
+    return ResponseEntity.ok(cartItemInfo);
   }
 
   @DeleteMapping("/{cartItemId}")
   @ResponseBody
-  public String removeCartItem(@PathVariable(value = "cartItemId") Long cartItemId) {
+  public ResponseEntity<CartInfoDto> removeCartItem(
+      @PathVariable(value = "cartItemId") Long cartItemId) {
     cartService.removeFromCart(cartItemId);
-    return "success";
+    CartInfoDto cartInfo = cartService.getCartInfo();
+    return ResponseEntity.ok(cartInfo);
   }
 
   @GetMapping
@@ -51,7 +56,16 @@ public class CartController {
     // Вычисляем сумму количества товаров в корзине
     int cartTotalQuantity = cart.getCartItems().stream().mapToInt(CartItem::getQuantity).sum();
     m.addAttribute("cart", cart);
-    m.addAttribute("totalQuantity", cartTotalQuantity);
-    return "cart/showcart";
+    m.addAttribute("cartTotalQuantity", cartTotalQuantity);
+    return "cart/index";
+  }
+
+  private CartItemInfoDto getCartItemInfoDto(CartItemDto cartItem) {
+    CartInfoDto cartInfo = cartService.getCartInfo();
+    return CartItemInfoDto.builder()
+        .cartItem(cartItem)
+        .cartItemsCount(cartInfo.getCartItemsCount())
+        .cartAmount(cartInfo.getCartAmount())
+        .build();
   }
 }
