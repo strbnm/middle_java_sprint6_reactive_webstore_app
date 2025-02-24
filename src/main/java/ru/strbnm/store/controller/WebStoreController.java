@@ -26,14 +26,12 @@ public class WebStoreController {
   private final int PAGINATION_SIZE = 10;
   private final ProductService productService;
   private final CartService cartService;
-  private final OrderService orderService;
 
   @Autowired
   public WebStoreController(
       ProductService productService, CartService cartService, OrderService orderService) {
     this.productService = productService;
     this.cartService = cartService;
-    this.orderService = orderService;
   }
 
   @GetMapping("/products")
@@ -61,7 +59,7 @@ public class WebStoreController {
     m.addAttribute("sortOptions", ProductSortEnum.values());
     m.addAttribute("selectedSorting", productSort.name());
     m.addAttribute("cartItemMap", cartItemMap);
-    m.addAttribute("totalQuantity", cartTotalQuantity);
+    m.addAttribute("cartTotalQuantity", cartTotalQuantity);
     m.addAttribute("isShowCase", true);
     return "products/showcase";
   }
@@ -80,8 +78,8 @@ public class WebStoreController {
     CartItemDto cartItem = cartItemMap.get(product.getId());
     m.addAttribute("product", product);
     m.addAttribute("cartItem", cartItem);
-    m.addAttribute("totalQuantity", cartTotalQuantity);
-    return "products/show";
+    m.addAttribute("cartTotalQuantity", cartTotalQuantity);
+    return "products/product_detail";
   }
 }
 

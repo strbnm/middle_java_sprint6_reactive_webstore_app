@@ -147,6 +147,28 @@
             localStorage.setItem(storageKey, JSON.stringify(filterData));
         }
 
+        function checkAndUpdateFilters() {
+            let storedData = localStorage.getItem(storageKey);
+            let url = new URL(window.location.href);
+            let hasDifference = false;
+
+            if (storedData) {
+                let filterData = JSON.parse(storedData);
+                Object.keys(filterData).forEach(key => {
+                    if (url.searchParams.get(key) !== filterData[key]) {
+                        hasDifference = true;
+                    }
+                });
+
+                // Если есть расхождения, очищаем localStorage
+                if (hasDifference) {
+                    localStorage.removeItem(storageKey);
+                    localStorage.removeItem(sortingKey);
+                    localStorage.removeItem(sizeKey);
+                }
+            }
+        }
+
         function loadSortingAndSize() {
             let sortingValue = localStorage.getItem(sortingKey);
             let sizeValue = localStorage.getItem(sizeKey);
@@ -170,6 +192,7 @@
         });
 
         // Загружаем данные при открытии страницы
+        checkAndUpdateFilters();
         loadSortingAndSize();
         loadFilterValues();
         toggleClearButton();

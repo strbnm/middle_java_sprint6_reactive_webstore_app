@@ -15,8 +15,9 @@
                 <li>
                     <a id="cartLink" class="waves-effect waves-light" th:href="@{/cart}">
                         Корзина
-                        <span id="cartBadge" th:if="${totalQuantity != null and totalQuantity > 0}" class="badge red"
-                              th:text="${totalQuantity}">
+                        <span id="cartBadge" th:if="${cartTotalQuantity != null and cartTotalQuantity > 0}"
+                              class="badge red"
+                              th:text="${cartTotalQuantity}">
                         </span>
                     </a>
                 </li>
