@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.strbnm.store.dto.OrderDto;
+import ru.strbnm.store.dto.OrderItemDto;
 import ru.strbnm.store.dto.OrderSummaryDto;
 import ru.strbnm.store.entity.CartItem;
 import ru.strbnm.store.entity.Order;
 import ru.strbnm.store.entity.OrderItem;
+import ru.strbnm.store.mapper.OrderItemMapper;
 import ru.strbnm.store.mapper.OrderMapper;
 import ru.strbnm.store.repository.CartItemRepository;
 import ru.strbnm.store.repository.OrderItemRepository;
@@ -21,17 +23,20 @@ public class OrderServiceImpl implements OrderService {
   private final OrderRepository orderRepository;
   private final OrderItemRepository orderItemRepository;
   private final OrderMapper orderMapper;
+  private final OrderItemMapper orderItemMapper;
 
   @Autowired
   public OrderServiceImpl(
       CartItemRepository cartItemRepository,
       OrderRepository orderRepository,
       OrderItemRepository orderItemRepository,
-      OrderMapper orderMapper) {
+      OrderMapper orderMapper,
+      OrderItemMapper orderItemMapper) {
     this.cartItemRepository = cartItemRepository;
     this.orderRepository = orderRepository;
     this.orderItemRepository = orderItemRepository;
     this.orderMapper = orderMapper;
+    this.orderItemMapper = orderItemMapper;
   }
 
   @Transactional
@@ -79,10 +84,16 @@ public class OrderServiceImpl implements OrderService {
 
   @Override
   public OrderDto getOrderById(Long orderId) {
-    return orderRepository
-        .findById(orderId)
-        .map(orderMapper::toDTO)
-        .orElseThrow(() -> new RuntimeException("Заказ не найден."));
+    Order order =
+        orderRepository
+            .findOrderWithItemsAndProducts(orderId)
+            .orElseThrow(() -> new RuntimeException("Заказ не найден."));
+    List<OrderItemDto> items = orderItemMapper.toDTOs(order.getItems());
+    return OrderDto.builder()
+        .id(order.getId())
+        .totalPrice(order.getTotalPrice())
+        .items(items)
+        .build();
   }
 
   @Override
