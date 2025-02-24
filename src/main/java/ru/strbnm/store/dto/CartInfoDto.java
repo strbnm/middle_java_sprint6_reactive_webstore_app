@@ -6,5 +6,5 @@ import lombok.Value;
 @Value
 public class CartInfoDto {
   Integer cartItemsCount;
-    BigDecimal cartAmount;
+  BigDecimal cartAmount;
 }

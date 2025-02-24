@@ -8,7 +8,7 @@ import ru.strbnm.store.dto.CartInfoDto;
 import ru.strbnm.store.dto.CartItemDto;
 
 public interface CartService {
-  List<CartItemDto> getCartItems();
+  List<CartItemDto> getCartItemsDto();
 
   @Transactional
   CartItemDto addToCart(Long productId, int quantity);

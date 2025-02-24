@@ -34,7 +34,7 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public List<CartItemDto> getCartItems() {
+  public List<CartItemDto> getCartItemsDto() {
     return cartItemMapper.toDTOs(cartItemRepository.findAll());
   }
 
@@ -97,12 +97,13 @@ public class CartServiceImpl implements CartService {
   public CartInfoDto getCartInfo() {
     List<CartItem> cartItems = cartItemRepository.findAll();
     BigDecimal cartAmount = calculateCartAmount(cartItems);
-    return new CartInfoDto(cartItems.size(), cartAmount);
+    Integer cartItemsCount = calculateCartItemsCount(cartItems);
+    return new CartInfoDto(cartItemsCount, cartAmount);
   }
 
   @Override
   public Map<Long, CartItemDto> getCartItemMap() {
-    List<CartItemDto> cartItems = getCartItems();
+    List<CartItemDto> cartItems = getCartItemsDto();
     return cartItems.stream().collect(Collectors.toMap(CartItemDto::getProductId, item -> item));
   }
 
@@ -110,5 +111,9 @@ public class CartServiceImpl implements CartService {
     return cartItems.stream()
         .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
         .reduce(BigDecimal.ZERO, BigDecimal::add);
+  }
+
+  private Integer calculateCartItemsCount(List<CartItem> cartItems) {
+    return cartItems.stream().mapToInt(CartItem::getQuantity).sum();
   }
 }

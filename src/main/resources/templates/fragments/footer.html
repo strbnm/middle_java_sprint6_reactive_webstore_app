@@ -52,11 +52,11 @@
 
                         // Устанавливаем новое значение и cart-item-id
                         controls.find('.quantity-input')
-                            .val(response.quantity)
-                            .attr('data-cart-item-id', response.id);
+                            .val(response.cartItem.quantity)
+                            .attr('data-cart-item-id', response.cartItem.id);
 
                         // Обновляем или создаем cartBadge
-                        updateCartBadge(1);
+                        updateCartBadge(response.cartItemsCount);
                     },
                     error: function () {
                         alert('Ошибка при добавлении в корзину.');
@@ -86,13 +86,13 @@
                     success: function (response) {
                         const cartAction = controls.closest('.cart-action');
 
-                        if (response.quantity === 0) {
+                        if (response.cartItem.quantity === 0) {
                             controls.hide(); // Скрываем блок управления количеством
                             cartAction.find('.add-to-cart').show(); // Показываем кнопку "В корзину"
                             updateCartBadge(-1); // Уменьшаем счетчик корзины
                         } else {
-                            input.val(response.quantity);
-                            updateCartBadge(button.hasClass('plus') ? 1 : -1);
+                            input.val(response.cartItem.quantity);
+                            updateCartBadge(response.cartItemsCount);
                         }
                     },
                     error: function () {
@@ -102,18 +102,15 @@
             });
 
             // Функция обновления cartBadge
-            function updateCartBadge(change) {
+            function updateCartBadge(totalCount) {
                 let cartBadge = $('#cartBadge');
 
-                if (cartBadge.length === 0 && change > 0) {
+                if (cartBadge.length === 0 && totalCount > 0) {
                     // Если cartBadge не существует и корзина не пустая - создаем его
-                    $('#cartLink').append('<span id="cartBadge" class="badge red">1</span>');
+                    $('#cartLink').append(`<span id="cartBadge" class="badge red">${totalCount}</span>`);
                 } else {
-                    let currentCount = parseInt(cartBadge.text()) || 0;
-                    let newCount = currentCount + change;
-
-                    if (newCount > 0) {
-                        cartBadge.text(newCount);
+                    if (totalCount > 0) {
+                        cartBadge.text(totalCount);
                     } else {
                         cartBadge.remove(); // Удаляем badge, если товаров больше нет
                     }
@@ -146,11 +143,12 @@
                     success: function (response) {
                         const cartAction = controls.closest('.cart-action');
 
-                        if (response.quantity <= 1) minusButton.addClass("disabled"); // Делаем неактивной кнопку уменьшения количества
+                        if (response.cartItem.quantity <= 1) minusButton.addClass("disabled"); // Делаем неактивной кнопку уменьшения количества
                         else minusButton.removeClass("disabled");
 
-                        input.val(response.quantity);
-                        updateCartBadge(button.hasClass('plus') ? 1 : -1);
+                        input.val(response.cartItem.quantity);
+                        updateCartBadge(response.cartItemsCount);
+                        updateСartSummary(response.cartItemsCount, response.cartAmount);
                     },
                     error: function () {
                         alert('Ошибка при обновлении количества.');
@@ -159,18 +157,15 @@
             });
 
             // Функция обновления cartBadge
-            function updateCartBadge(change) {
+            function updateCartBadge(totalCount) {
                 let cartBadge = $('#cartBadge');
 
-                if (cartBadge.length === 0 && change > 0) {
+                if (cartBadge.length === 0 && totalCount > 0) {
                     // Если cartBadge не существует и корзина не пустая - создаем его
-                    $('#cartLink').append('<span id="cartBadge" class="badge red">1</span>');
+                    $('#cartLink').append('<span id="cartBadge" class="badge red">totalCount</span>');
                 } else {
-                    let currentCount = parseInt(cartBadge.text()) || 0;
-                    let newCount = currentCount + change;
-
-                    if (newCount > 0) {
-                        cartBadge.text(newCount);
+                    if (totalCount > 0) {
+                        cartBadge.text(totalCount);
                     } else {
                         cartBadge.remove(); // Удаляем badge, если товаров больше нет
                     }
@@ -189,10 +184,11 @@
                 $.ajax({
                     url: "/cart/" + cartItemId,
                     method: "DELETE",
-                    success: function () {
+                    success: function (response) {
                         itemRow.fadeOut(300, function () {
                             $(this).remove();
-                            updateCartBadge(-itemQuantity); // Уменьшаем cartBadge на количество удаленного товара
+                            updateCartBadge(response.cartItemsCount);
+                            updateСartSummary(response.cartItemsCount, response.cartAmount);
                         });
                     },
                     error: function () {
