@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Витрина интернет-магазина')}"></head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<main class="container">
+    <th:block th:if="${#lists.size(orders) != 0}">
+        <h4 class="page-title" th:text="${title != null ? title:'Все заказы'}"></h4>
+        <div class="row">
+            <div id="ordersContainer" class="col s8 offset-s2">
+                <div th:replace="~{fragments/orders-feed :: feed}"></div>
+            </div>
+            <br/>
+            <div id="totalOrdersAmount" class="col s8 offset-s2">
+                <p th:text="'Общая сумма заказов: ' + ${totalOrdersAmount} + ' руб.'"></p>
+            </div>
+        </div>
+    </th:block>
+    <th:block th:if="${#lists.size(orders) == 0}">
+        <h4 class="page-title" th:text="${title != null ? title:'Здесь еще нет заказов'}"></h4>
+    </th:block>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

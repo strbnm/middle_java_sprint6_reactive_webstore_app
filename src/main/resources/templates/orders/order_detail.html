@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: header('Витрина интернет-магазина')}"></head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<main class="container">
+    <h4 class="page-title" th:text="${title != null ? title:'Состав заказа'}"></h4>
+    <div class="row">
+        <div id="ordersItemContainer" class="col s8 offset-s2">
+            <div th:replace="~{fragments/orders-item-feed :: feed}"></div>
+        </div>
+        <br/>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>

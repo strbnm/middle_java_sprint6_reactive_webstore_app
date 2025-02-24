@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="feed">
+    <ul class="collection">
+        <li class="collection-item avatar order-row" th:each="order : ${orders}"
+            th:attr="onclick='window.location.href=\'' + @{/orders/{orderId}(orderId=${order.id})} + '\''"
+            style="cursor:pointer;">
+            <span class="title" th:text="'Заказ #' + ${order.id}"
+            ></span>
+            <p th:text="'Количество позиций в заказе: ' + ${#lists.size(order.items)}"></p>
+            <p th:text="'Сумма заказа: ' + ${order.totalPrice} + ' руб.'"></p>
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>
