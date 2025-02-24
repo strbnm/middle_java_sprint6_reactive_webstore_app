@@ -27,7 +27,7 @@ public class Order {
   @JdbcTypeCode(SqlTypes.NUMERIC)
   private BigDecimal totalPrice;
 
-  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @ToString.Exclude
   private List<OrderItem> items;
 

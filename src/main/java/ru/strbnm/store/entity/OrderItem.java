@@ -22,7 +22,7 @@ public class OrderItem {
   @Column(name = "id", nullable = false)
   private Long id;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "product_id", nullable = false)
   private Product product;
 
@@ -34,7 +34,7 @@ public class OrderItem {
   @JdbcTypeCode(SqlTypes.NUMERIC)
   private BigDecimal price;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "order_id", nullable = false)
   private Order order;
 
