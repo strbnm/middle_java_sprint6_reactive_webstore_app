@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,11 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import ru.strbnm.store.dto.CartItemDto;
 import ru.strbnm.store.dto.ProductDto;
 import ru.strbnm.store.service.CartService;
-import ru.strbnm.store.service.OrderService;
 import ru.strbnm.store.service.ProductService;
 import ru.strbnm.store.utils.ProductSortEnum;
 
-@Slf4j
 @Controller
 public class WebStoreController {
 
@@ -28,8 +25,7 @@ public class WebStoreController {
   private final CartService cartService;
 
   @Autowired
-  public WebStoreController(
-      ProductService productService, CartService cartService, OrderService orderService) {
+  public WebStoreController(ProductService productService, CartService cartService) {
     this.productService = productService;
     this.cartService = cartService;
   }
@@ -82,5 +78,3 @@ public class WebStoreController {
     return "products/product_detail";
   }
 }
-
-
