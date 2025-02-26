@@ -46,21 +46,4 @@ public class ProductServiceImpl implements ProductService {
             .orElseThrow(() -> new RuntimeException("Товар не найден"));
     return productMapper.toDTO(existsProduct);
   }
-
-  @Override
-  public Product getOne(Long productId) {
-    return productRepository
-        .findById(productId)
-        .orElseThrow(() -> new RuntimeException("Товар не найден"));
-  }
-
-  @Override
-  public ProductDto saveProduct(Product product) {
-    return productMapper.toDTO(productRepository.save(product));
-  }
-
-  @Override
-  public void deleteProduct(Long productId) {
-    productRepository.deleteById(productId);
-  }
 }
