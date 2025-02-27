@@ -47,6 +47,17 @@ public class CartItemRepositoryTest extends BaseRepositoryTest {
         assertEquals(expectedCartItems, actualCartItems, "id, product_id и quantity должны совпадать.");
     }
 
+  @Test
+  void findById_shouldReturnCartItemsWithSpecificId() {
+    CartItem cartItem =
+        cartItemRepository
+            .findById(2L)
+            .orElseThrow(() -> new RuntimeException("Позиция товара в корзине не найдена"));
+
+    assertEquals(4L, cartItem.getProduct().getId(), "id товара должно быть 4.");
+    assertEquals(20, cartItem.getQuantity(), "Количество товара должно быть 20.");
+  }
+
     @Test
     void save_shouldAddCartItemToDatabase() {
         Product product = productRepository.findById(5L).orElseThrow(() -> new RuntimeException("Товар не найден"));
