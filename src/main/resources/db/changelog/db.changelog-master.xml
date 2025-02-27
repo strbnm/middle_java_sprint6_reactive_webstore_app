@@ -131,24 +131,11 @@
             <dropForeignKeyConstraint baseTableName="order_items" constraintName="FK_ORDER_ITEMS_ON_PRODUCT"/>
         </rollback>
     </changeSet>
-    <changeSet id="1740157725677-1" author="strbnm" context="test">
+    <changeSet id="1740157725677-1" author="strbnm" context="prod">
         <loadData tableName="products" file="db/data/products.csv" separator=";">
             <column name="name" type="VARCHAR(255)"/>
             <column name="description" type="VARCHAR"/>
             <column name="price" type="DECIMAL(10,2)"/>
         </loadData>
-        <!--        <loadData tableName="cart_items" file="classpath:db/data/cart_items.csv" separator=";">-->
-        <!--            <column name="product_id" type="BIGINT"/>-->
-        <!--            <column name="quantity" type="INT"/>-->
-        <!--        </loadData>-->
-        <!--        <loadData tableName="orders" file="classpath:db/data/orders.csv" separator=";">-->
-        <!--            <column name="total_price" type="DECIMAL(10,2)"/>-->
-        <!--        </loadData>-->
-        <!--        <loadData tableName="order_items" file="classpath:db/data/order_items.csv" separator=";">-->
-        <!--            <column name="product_id" type="BIGINT"/>-->
-        <!--            <column name="quantity" type="INT"/>-->
-        <!--            <column name="price" type="DECIMAL(10,2)"/>-->
-        <!--            <column name="order_id" type="BIGINT"/>-->
-        <!--        </loadData>-->
     </changeSet>
 </databaseChangeLog>
