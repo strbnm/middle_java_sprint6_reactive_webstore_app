@@ -30,6 +30,11 @@ public class WebStoreController {
     this.cartService = cartService;
   }
 
+  @GetMapping("/")
+  public String redirect() {
+    return "redirect:products";
+  }
+
   @GetMapping("/products")
   public String showProductShowcase(
       @RequestParam(value = "page", defaultValue = "0") @Min(0) int page,
