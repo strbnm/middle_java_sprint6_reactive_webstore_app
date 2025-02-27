@@ -19,9 +19,9 @@ INSERT INTO cart_items(product_id, quantity) VALUES
 
 
 INSERT INTO orders(total_price) VALUES
-    (6319,05),
-    (677,68),
-    (6210,91);
+    (6319.05),
+    (677.68),
+    (6210.91);
 
 INSERT INTO order_items(product_id, quantity, price, order_id) VALUES
     (1, 10, 464.64, 1),
