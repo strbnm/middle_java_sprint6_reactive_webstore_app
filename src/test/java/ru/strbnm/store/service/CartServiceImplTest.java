@@ -36,16 +36,16 @@ public class CartServiceImplTest {
   @Autowired private CartItemMapper cartItemMapper;
   @Autowired private CartServiceImpl cartService;
 
-  private Product productOne;
-  private Product productTwo;
-  private CartItem cartItemOne;
-  private CartItem cartItemTwo;
-  private CartItemDto cartItemDtoOne;
-  private CartItemDto cartItemDtoTwo;
+  private Product productA;
+  private Product productB;
+  private CartItem cartItemA;
+  private CartItem cartItemB;
+  private CartItemDto cartItemDtoA;
+  private CartItemDto cartItemDtoB;
 
   @BeforeEach
   void setUp() {
-    productOne =
+    productA =
         Product.builder()
             .id(1L)
             .name("Test product #1")
@@ -54,7 +54,7 @@ public class CartServiceImplTest {
             .price(BigDecimal.valueOf(100))
             .build();
 
-    productTwo =
+    productB =
         Product.builder()
             .id(2L)
             .name("Test product #2")
@@ -63,42 +63,42 @@ public class CartServiceImplTest {
             .price(BigDecimal.valueOf(200))
             .build();
 
-    cartItemOne = CartItem.builder().id(1L).product(productOne).quantity(2).build();
+    cartItemA = CartItem.builder().id(1L).product(productA).quantity(2).build();
 
-    cartItemTwo = CartItem.builder().id(2L).product(productTwo).quantity(10).build();
+    cartItemB = CartItem.builder().id(2L).product(productB).quantity(10).build();
 
-    cartItemDtoOne = new CartItemDto(1L, 1L, 2);
-    cartItemDtoTwo = new CartItemDto(2L, 2L, 10);
+    cartItemDtoA = new CartItemDto(1L, 1L, 2);
+    cartItemDtoB = new CartItemDto(2L, 2L, 10);
   }
 
   @Test
   void testGetCartItemsDto() {
-    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemOne, cartItemTwo));
+    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemA, cartItemB));
 
     List<CartItemDto> result = cartService.getCartItemsDto();
     assertThat("В списке позиций корзины две записи", result, hasSize(2));
-    assertEquals(List.of(cartItemDtoOne, cartItemDtoTwo), result);
+    assertEquals(List.of(cartItemDtoA, cartItemDtoB), result);
   }
 
   @Test
   void testAddToCart_NewItem() {
-    when(productRepository.findById(1L)).thenReturn(Optional.of(productOne));
-    when(cartItemRepository.findByProduct(productOne)).thenReturn(Optional.empty());
-    when(cartItemRepository.save(any(CartItem.class))).thenReturn(cartItemOne);
+    when(productRepository.findById(1L)).thenReturn(Optional.of(productA));
+    when(cartItemRepository.findByProduct(productA)).thenReturn(Optional.empty());
+    when(cartItemRepository.save(any(CartItem.class))).thenReturn(cartItemA);
 
     CartItemDto result = cartService.addToCart(1L, 2);
 
     assertNotNull(result, "Объект не должен быть null.Объект не должен быть null.");
-    assertEquals(cartItemDtoOne, result);
+    assertEquals(cartItemDtoA, result);
 
     verify(productRepository, times(1)).findById(1L);
-    verify(cartItemRepository, times(1)).findByProduct(productOne);
+    verify(cartItemRepository, times(1)).findByProduct(productA);
     verify(cartItemRepository, times(1)).save(any(CartItem.class));
   }
 
   @Test
   void testUpdateCartItemWithPositiveQuantity() {
-    when(cartItemRepository.findById(2L)).thenReturn(Optional.of(cartItemTwo));
+    when(cartItemRepository.findById(2L)).thenReturn(Optional.of(cartItemB));
     when(cartItemRepository.save(any(CartItem.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -113,15 +113,15 @@ public class CartServiceImplTest {
 
   @Test
   void testUpdateCartItemWithZeroQuantity() {
-    when(cartItemRepository.findById(1L)).thenReturn(Optional.of(cartItemOne));
-    doNothing().when(cartItemRepository).delete(cartItemOne);
+    when(cartItemRepository.findById(1L)).thenReturn(Optional.of(cartItemA));
+    doNothing().when(cartItemRepository).delete(cartItemA);
 
     CartItemDto result = cartService.updateCartItem(1L, 1L, 0);
     assertNotNull(result, "Объект не должен быть null.");
     assertEquals(0, result.getQuantity(), "Кол-во для позиции корзины с id=1 должно быть равно 0.");
 
     verify(cartItemRepository, times(1)).findById(1L);
-    verify(cartItemRepository, times(1)).delete(cartItemOne);
+    verify(cartItemRepository, times(1)).delete(cartItemA);
   }
 
   @Test
@@ -134,7 +134,7 @@ public class CartServiceImplTest {
 
   @Test
   void testGetCartSummary() {
-    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemOne, cartItemTwo));
+    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemA, cartItemB));
 
     CartDto result = cartService.getCartSummary();
     assertNotNull(result, "Объект не должен быть null.");
@@ -142,12 +142,12 @@ public class CartServiceImplTest {
         BigDecimal.valueOf(2200),
         result.getCartAmount(),
         "Общая стоимость товаров в корзине должна быть равна 2200.");
-    assertEquals(List.of(cartItemOne, cartItemTwo), result.getCartItems());
+    assertEquals(List.of(cartItemA, cartItemB), result.getCartItems());
   }
 
   @Test
   void testGetCartInfo() {
-    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemOne, cartItemTwo));
+    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemA, cartItemB));
 
     CartInfoDto result = cartService.getCartInfo();
     assertNotNull(result, "Объект не должен быть null.");
