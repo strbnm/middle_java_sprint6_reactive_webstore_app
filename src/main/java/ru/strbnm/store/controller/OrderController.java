@@ -20,10 +20,9 @@ public class OrderController {
   private final CartService cartService;
 
   @Autowired
-  public OrderController(
-      OrderService orderService, CartService cartService, CartService cartService1) {
+  public OrderController(OrderService orderService, CartService cartService) {
     this.orderService = orderService;
-    this.cartService = cartService1;
+    this.cartService = cartService;
   }
 
   @Transactional
