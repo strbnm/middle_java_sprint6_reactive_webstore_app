@@ -38,8 +38,7 @@ public class WebStoreController {
   @GetMapping("/products")
   public String showProductShowcase(
       @RequestParam(value = "page", defaultValue = "0") @Min(0) int page,
-      @RequestParam(value = "size", defaultValue = "" + PAGINATION_SIZE) @Min(10) @Max(100)
-          int size,
+      @RequestParam(value = "size", defaultValue = "" + PAGINATION_SIZE) @Min(5) @Max(100) int size,
       @RequestParam(value = "text", required = false) String searchText,
       @RequestParam(value = "price_from", required = false) BigDecimal priceFrom,
       @RequestParam(value = "price_to", required = false) BigDecimal priceTo,
