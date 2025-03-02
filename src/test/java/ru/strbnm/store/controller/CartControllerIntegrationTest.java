@@ -40,6 +40,8 @@ public class CartControllerIntegrationTest extends BaseControllersIntegrationTes
    2   4           20
    3   6           30
    4   9           1
+
+   Общее кол-во всех товаров в корзине (сумма quantity) - 61.
   */
 
   @BeforeEach
@@ -165,10 +167,12 @@ public class CartControllerIntegrationTest extends BaseControllersIntegrationTes
         .andExpect(content().contentType("text/html;charset=UTF-8"))
         .andExpect(view().name("cart/index"))
         .andExpect(model().attributeExists("cart", "cartTotalQuantity"))
-        // Проверка, что Заголовок страницы "Все публикации"
+        // Проверка, что Заголовок страницы "Товары в корзине"
         .andExpect(xpath("//main/h4").string("Товары в корзине"))
-        // Проверяем, что 4 элемента в корзине
+        // Проверяем, что 4 товара в корзине
         .andExpect(xpath("//ul[@class='collection']/li").nodeCount(4))
+        // Проверяем, что в общее количество по всем товарам корзины равно 61
+        .andExpect(xpath("//span[@id='cartBadge']").string("61"))
         // Проверяем название, цену и количество для первого элемента корзины
         .andExpect(
             xpath("//ul[@class='collection']/li[1]/span[@class='title']")
@@ -199,5 +203,21 @@ public class CartControllerIntegrationTest extends BaseControllersIntegrationTes
         .andExpect(
             xpath("//ul[@class='collection']/li[4]//input[@class='quantity-input']/@value")
                 .string("1"));
+  }
+
+  @Test
+  void getCartWithoutCartItem_shouldReturnHtmlWithEmptyCart() throws Exception {
+    cartItemRepository.deleteAll();
+    mockMvc
+        .perform(get("/cart"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType("text/html;charset=UTF-8"))
+        .andExpect(view().name("cart/index"))
+        .andExpect(model().attributeExists("cart", "cartTotalQuantity"))
+        // Проверка, что Заголовок страницы "Корзина пустая"
+        .andExpect(xpath("//main/h4").string("Корзина пустая"))
+        // Проверка, что страница не содержит записей с позициями корзины
+        .andExpect(xpath("//ul[@class='collection']/li").doesNotExist())
+        .andExpect(xpath("//span[@id='cartBadge']").doesNotExist());
   }
 }
