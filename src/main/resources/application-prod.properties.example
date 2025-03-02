@@ -1,6 +1,6 @@
 # JPA settings
 spring.jpa.hibernate.ddl-auto=none
-spring.datasource.url=jdbc:postgresql://localhost:5432/web_store_db
+spring.datasource.url=jdbc:postgresql://postgresql:5432/web_store_db
 spring.datasource.driverClassName=org.postgresql.Driver
 spring.datasource.username=web_store_app_user
 spring.datasource.password=web_store_app_password
@@ -11,6 +11,7 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 #Liquibase configs
 spring.liquibase.change-log=classpath:db/changelog/db.changelog-master.xml
+spring.liquibase.contexts=prod
 
 app.product.image.dir=/opt/images
 
