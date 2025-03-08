@@ -1,5 +1,6 @@
 package ru.strbnm.store.controller;
 
+import java.net.URI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +17,6 @@ import ru.strbnm.store.dto.OrderDto;
 import ru.strbnm.store.dto.OrderSummaryDto;
 import ru.strbnm.store.service.CartService;
 import ru.strbnm.store.service.OrderService;
-
-import java.net.URI;
 
 @Controller
 @RequestMapping("/orders")
@@ -78,6 +77,12 @@ public class OrderController {
               m.addAttribute("cartTotalQuantity", cartInfo.getCartItemsCount());
               m.addAttribute("title", "Состав заказа #" + order.getId());
             })
-        .thenReturn("orders/order_detail");
+        .thenReturn("orders/order_detail")
+        .switchIfEmpty(
+            Mono.defer(
+                () -> {
+                  m.addAttribute("error", "Not Found");
+                  return Mono.just("errors/4xx");
+                }));
   }
 }
