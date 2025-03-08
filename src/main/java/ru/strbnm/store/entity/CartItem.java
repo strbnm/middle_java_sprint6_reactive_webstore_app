@@ -8,16 +8,13 @@ import org.springframework.data.relational.core.mapping.Table;
 @Getter
 @Setter
 @ToString
-@RequiredArgsConstructor
-@AllArgsConstructor
 @Builder
 @Table("cart_items")
 public class CartItem {
-  @Id
-  private Long id;
+  @Id private Long id;
 
   @Column("product_id")
-  private Product productId;
+  private Long productId;
 
   private int quantity;
 }

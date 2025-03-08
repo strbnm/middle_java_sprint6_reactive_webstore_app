@@ -8,14 +8,10 @@ import org.springframework.data.relational.core.mapping.Table;
 
 @Getter
 @Setter
-@ToString
-@RequiredArgsConstructor
-@AllArgsConstructor
 @Builder
 @Table("order_items")
 public class OrderItem {
-  @Id
-  private Long id;
+  @Id private Long id;
 
   @Column("product_id")
   private Long productId;
@@ -27,4 +23,3 @@ public class OrderItem {
   @Column("order_id")
   private Long orderId;
 }
-

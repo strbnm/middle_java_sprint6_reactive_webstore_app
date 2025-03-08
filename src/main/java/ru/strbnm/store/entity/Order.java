@@ -9,13 +9,10 @@ import org.springframework.data.relational.core.mapping.Table;
 @Getter
 @Setter
 @ToString
-@RequiredArgsConstructor
-@AllArgsConstructor
 @Builder
 @Table("orders")
 public class Order {
-  @Id
-  private Long id;
+  @Id private Long id;
 
   @Column("total_price")
   private BigDecimal totalPrice;
