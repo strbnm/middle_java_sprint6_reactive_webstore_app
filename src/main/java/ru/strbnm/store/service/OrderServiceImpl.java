@@ -1,17 +1,17 @@
 package ru.strbnm.store.service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.strbnm.store.dto.OrderDto;
-import ru.strbnm.store.dto.OrderItemDto;
 import ru.strbnm.store.dto.OrderSummaryDto;
-import ru.strbnm.store.entity.CartItem;
 import ru.strbnm.store.entity.Order;
 import ru.strbnm.store.entity.OrderItem;
-import ru.strbnm.store.mapper.OrderItemMapper;
 import ru.strbnm.store.mapper.OrderMapper;
 import ru.strbnm.store.repository.CartItemRepository;
 import ru.strbnm.store.repository.OrderItemRepository;
@@ -23,84 +23,86 @@ public class OrderServiceImpl implements OrderService {
   private final OrderRepository orderRepository;
   private final OrderItemRepository orderItemRepository;
   private final OrderMapper orderMapper;
-  private final OrderItemMapper orderItemMapper;
 
   @Autowired
   public OrderServiceImpl(
       CartItemRepository cartItemRepository,
       OrderRepository orderRepository,
       OrderItemRepository orderItemRepository,
-      OrderMapper orderMapper,
-      OrderItemMapper orderItemMapper) {
+      OrderMapper orderMapper) {
     this.cartItemRepository = cartItemRepository;
     this.orderRepository = orderRepository;
     this.orderItemRepository = orderItemRepository;
     this.orderMapper = orderMapper;
-    this.orderItemMapper = orderItemMapper;
   }
 
+  @Override
   @Transactional
-  @Override
-  public OrderDto createOrder() {
-    List<CartItem> cartItems = cartItemRepository.findAll();
-    if (cartItems.isEmpty()) {
-      throw new RuntimeException("Корзина пустая.");
-    }
+  public Mono<OrderDto> createOrder() {
+    return cartItemRepository
+        .findAllWithProducts()
+        .collectList()
+        .filter(cartItems -> !cartItems.isEmpty())
+        .switchIfEmpty(Mono.error(new RuntimeException("Корзина пустая.")))
+        .flatMap(
+            cartItems -> {
+              BigDecimal totalPrice =
+                  cartItems.stream()
+                      .map(
+                          item ->
+                              item.getProduct()
+                                  .getPrice()
+                                  .multiply(BigDecimal.valueOf(item.getCartItem().getQuantity())))
+                      .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-    BigDecimal totalPrice =
-        cartItems.stream()
-            .map(
-                item ->
-                    item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+              Order newOrder = Order.builder().totalPrice(totalPrice).build();
 
-    Order order = Order.builder().totalPrice(totalPrice).build();
+              return orderRepository
+                  .save(newOrder)
+                  .flatMap(
+                      savedOrder -> {
+                        List<OrderItem> orderItems =
+                            cartItems.stream()
+                                .map(
+                                    cartItemWithProduct ->
+                                        OrderItem.builder()
+                                            .productId(cartItemWithProduct.getProduct().getId())
+                                            .quantity(
+                                                cartItemWithProduct.getCartItem().getQuantity())
+                                            .price(cartItemWithProduct.getProduct().getPrice())
+                                            .orderId(savedOrder.getId())
+                                            .build())
+                                .toList();
 
-    order = orderRepository.save(order);
-
-    Order finalOrder = order;
-    List<OrderItem> orderItems =
-        cartItems.stream()
-            .map(
-                cartItem ->
-                    OrderItem.builder()
-                        .product(cartItem.getProduct())
-                        .quantity(cartItem.getQuantity())
-                        .price(cartItem.getProduct().getPrice())
-                        .order(finalOrder)
-                        .build())
-            .toList();
-
-    orderItemRepository.saveAll(orderItems);
-    cartItemRepository.deleteAll();
-
-    return orderMapper.toDTO(order);
+                        return orderItemRepository
+                            .saveAll(orderItems)
+                            .then(cartItemRepository.deleteAll())
+                            .thenReturn(savedOrder);
+                      });
+            })
+        .map(orderMapper::toDTO);
   }
 
   @Override
-  public List<OrderDto> getAllOrders() {
-    return orderMapper.toDTOs(orderRepository.findAll());
+  public Flux<OrderDto> getAllOrders() {
+    return orderRepository.findAllOrdersWithItemsAndProducts();
   }
 
   @Override
-  public OrderDto getOrderById(Long orderId) {
-    Order order =
-        orderRepository
-            .findOrderWithItemsAndProducts(orderId)
-            .orElseThrow(() -> new RuntimeException("Заказ не найден."));
-    List<OrderItemDto> items = orderItemMapper.toDTOs(order.getItems());
-    return OrderDto.builder()
-        .id(order.getId())
-        .totalPrice(order.getTotalPrice())
-        .items(items)
-        .build();
+  public Mono<OrderDto> getOrderById(Long orderId) {
+    return orderRepository.findOrderWithItemsAndProducts(orderId);
   }
 
   @Override
-  public OrderSummaryDto getOrdersSummary() {
-    List<OrderDto> orderDtoList = getAllOrders();
-    BigDecimal totalAmount =
-        orderDtoList.stream().map(OrderDto::getTotalPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
-    return new OrderSummaryDto(orderDtoList, totalAmount);
+  public Mono<OrderSummaryDto> getOrdersSummary() {
+    return orderRepository
+        .findAllOrdersWithItemsAndProducts()
+        .reduce(
+            new OrderSummaryDto(new ArrayList<>(), BigDecimal.ZERO),
+            (summary, order) -> {
+              summary.getOrderDtoList().add(order);
+              return new OrderSummaryDto(
+                  summary.getOrderDtoList(), summary.getTotalAmount().add(order.getTotalPrice()));
+            });
   }
 }

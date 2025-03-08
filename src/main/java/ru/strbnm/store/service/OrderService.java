@@ -1,15 +1,16 @@
 package ru.strbnm.store.service;
 
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.strbnm.store.dto.OrderDto;
 import ru.strbnm.store.dto.OrderSummaryDto;
 
 public interface OrderService {
-  OrderDto createOrder();
+  Mono<OrderDto> createOrder();
 
-  List<OrderDto> getAllOrders();
+  Flux<OrderDto> getAllOrders();
 
-  OrderDto getOrderById(Long orderId);
+  Mono<OrderDto> getOrderById(Long orderId);
 
-  OrderSummaryDto getOrdersSummary();
+  Mono<OrderSummaryDto> getOrdersSummary();
 }
