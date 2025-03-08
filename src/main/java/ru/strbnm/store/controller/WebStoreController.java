@@ -5,12 +5,11 @@ import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.strbnm.store.dto.CartItemDto;
 import ru.strbnm.store.dto.ProductDto;
 import ru.strbnm.store.service.CartService;
@@ -36,7 +35,7 @@ public class WebStoreController {
   }
 
   @GetMapping("/products")
-  public String showProductShowcase(
+  public Mono<String> showProductShowcase(
       @RequestParam(value = "page", defaultValue = "0") @Min(0) int page,
       @RequestParam(value = "size", defaultValue = "" + PAGINATION_SIZE) @Min(5) @Max(100) int size,
       @RequestParam(value = "text", required = false) String searchText,
@@ -45,40 +44,65 @@ public class WebStoreController {
       @RequestParam(value = "letter", required = false) String letter,
       @RequestParam(value = "sorting", defaultValue = "NAME_ASC") ProductSortEnum productSort,
       Model m) {
-    Pageable pageRequest = PageRequest.of(page, size, productSort.getSortExpression());
-    Page<ProductDto> products =
-        productService.getFilteredProducts(searchText, priceFrom, priceTo, letter, pageRequest);
 
-    // Преобразуем список корзины в Map
-    Map<Long, CartItemDto> cartItemMap = cartService.getCartItemMap();
+    Flux<ProductDto> productsFlux =
+        productService.getFilteredProducts(
+            searchText, priceFrom, priceTo, letter, page, size, productSort.getSortExpression());
 
-    // Вычисляем сумму количества товаров в корзине
-    int cartTotalQuantity = cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
-    m.addAttribute("products", products);
-    m.addAttribute("size", size);
-    m.addAttribute("sortOptions", ProductSortEnum.values());
-    m.addAttribute("selectedSorting", productSort.name());
-    m.addAttribute("cartItemMap", cartItemMap);
-    m.addAttribute("cartTotalQuantity", cartTotalQuantity);
-    m.addAttribute("isShowCase", true);
-    return "products/showcase";
+    Mono<Map<Long, CartItemDto>> cartItemsMono = cartService.getCartItemMap();
+    Mono<Long> totalElementsMono = productService.getCountAllProducts();
+
+    return Mono.zip(cartItemsMono, totalElementsMono)
+        .doOnNext(tuple -> {
+            Map<Long, CartItemDto> cartItemMap = tuple.getT1();
+            Long totalElements = tuple.getT2();
+            int totalPages = (int) Math.ceil((double) totalElements / size);
+            int cartTotalQuantity =
+                  cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
+
+              m.addAttribute("size", size);
+              m.addAttribute("sortOptions", ProductSortEnum.values());
+              m.addAttribute("selectedSorting", productSort.name());
+              m.addAttribute("cartItemMap", cartItemMap);
+              m.addAttribute("cartTotalQuantity", cartTotalQuantity);
+              m.addAttribute("isShowCase", true);
+              m.addAttribute("totalElements", totalElements);
+              m.addAttribute("pageNumber", page);
+              m.addAttribute("totalPages", totalPages);
+            })
+        .thenReturn("products/showcase")
+        .doOnSuccess(
+            viewName -> m.addAttribute("products", productsFlux));
   }
 
   @GetMapping("/products/{id}")
-  public String getProductById(@PathVariable(value = "id") Long productId, Model m) {
-    ProductDto product = productService.getProductById(productId);
+  public Mono<String> getProductById(@PathVariable Long id, Model model) {
+    Mono<ProductDto> productMono = productService.getProductById(id);
+    Mono<Map<Long, CartItemDto>> cartItemsMono = cartService.getCartItemMap();
 
-    // Преобразуем список корзины в Map
-    Map<Long, CartItemDto> cartItemMap = cartService.getCartItemMap();
+    return Mono.zip(productMono, cartItemsMono)
+        .doOnNext(
+            tuple -> {
+              ProductDto product = tuple.getT1();
+              Map<Long, CartItemDto> cartItemMap = tuple.getT2();
 
-    // Вычисляем сумму количества товаров в корзине
-    int cartTotalQuantity = cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
+              // Вычисляем общее количество товаров в корзине
+              int cartTotalQuantity =
+                  cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
 
-    // Получаем объект корзины, если товар был добавлен в корзину или null
-    CartItemDto cartItem = cartItemMap.get(product.getId());
-    m.addAttribute("product", product);
-    m.addAttribute("cartItem", cartItem);
-    m.addAttribute("cartTotalQuantity", cartTotalQuantity);
-    return "products/product_detail";
+              // Получаем объект корзины, если товар был добавлен
+              CartItemDto cartItem = cartItemMap.get(product.getId());
+
+              model.addAttribute("product", product);
+              model.addAttribute("cartItem", cartItem);
+              model.addAttribute("cartTotalQuantity", cartTotalQuantity);
+            })
+        .thenReturn("products/product_detail")
+        .switchIfEmpty(
+            Mono.defer(
+                () -> {
+                  model.addAttribute("error", "Not Found");
+                  return Mono.just("errors/4xx");
+                })); // если товар не найден
   }
 }
