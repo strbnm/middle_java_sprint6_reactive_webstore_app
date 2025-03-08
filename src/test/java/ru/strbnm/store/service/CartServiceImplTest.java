@@ -1,7 +1,5 @@
 package ru.strbnm.store.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -9,7 +7,6 @@ import static org.mockito.Mockito.times;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -18,9 +15,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import ru.strbnm.store.dto.CartDto;
-import ru.strbnm.store.dto.CartInfoDto;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import ru.strbnm.store.dto.CartItemDto;
+import ru.strbnm.store.dto.CartItemWithProduct;
 import ru.strbnm.store.entity.CartItem;
 import ru.strbnm.store.entity.Product;
 import ru.strbnm.store.mapper.CartItemMapper;
@@ -42,6 +41,8 @@ public class CartServiceImplTest {
   private CartItem cartItemB;
   private CartItemDto cartItemDtoA;
   private CartItemDto cartItemDtoB;
+  private CartItemWithProduct cartItemWithProductA;
+  private CartItemWithProduct cartItemWithProductB;
 
   @BeforeEach
   void setUp() {
@@ -63,49 +64,57 @@ public class CartServiceImplTest {
             .price(BigDecimal.valueOf(200))
             .build();
 
-    cartItemA = CartItem.builder().id(1L).product(productA).quantity(2).build();
+    cartItemA = CartItem.builder().id(1L).productId(productA.getId()).quantity(2).build();
 
-    cartItemB = CartItem.builder().id(2L).product(productB).quantity(10).build();
+    cartItemB = CartItem.builder().id(2L).productId(productB.getId()).quantity(10).build();
 
     cartItemDtoA = new CartItemDto(1L, 1L, 2);
     cartItemDtoB = new CartItemDto(2L, 2L, 10);
+
+    cartItemWithProductA = CartItemWithProduct.builder().cartItem(cartItemA).product(productA).build();
+    cartItemWithProductB = CartItemWithProduct.builder().cartItem(cartItemB).product(productB).build();
   }
 
   @Test
   void testGetCartItemsDto() {
-    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemA, cartItemB));
+    when(cartItemRepository.findAll()).thenReturn(Flux.just(cartItemA, cartItemB));
 
-    List<CartItemDto> result = cartService.getCartItemsDto();
-    assertThat("В списке позиций корзины две записи", result, hasSize(2));
-    assertEquals(List.of(cartItemDtoA, cartItemDtoB), result);
+    StepVerifier.create(cartService.getCartItemsDto())
+            .expectNext(cartItemDtoA)
+            .expectNext(cartItemDtoB)
+            .verifyComplete();
+
+    verify(cartItemRepository, times(1)).findAll();
   }
 
   @Test
   void testAddToCart_NewItem() {
-    when(productRepository.findById(1L)).thenReturn(Optional.of(productA));
-    when(cartItemRepository.findByProduct(productA)).thenReturn(Optional.empty());
-    when(cartItemRepository.save(any(CartItem.class))).thenReturn(cartItemA);
+    when(productRepository.findById(1L)).thenReturn(Mono.just(productA));
+    when(cartItemRepository.findByProductId(productA.getId())).thenReturn(Mono.empty());
+    when(cartItemRepository.save(any(CartItem.class))).thenReturn(Mono.just(cartItemA));
 
-    CartItemDto result = cartService.addToCart(1L, 2);
-
-    assertNotNull(result, "Объект не должен быть null.Объект не должен быть null.");
-    assertEquals(cartItemDtoA, result);
+    StepVerifier.create(cartService.addToCart(1L, 2))
+            .expectNext(cartItemDtoA)
+            .verifyComplete();
 
     verify(productRepository, times(1)).findById(1L);
-    verify(cartItemRepository, times(1)).findByProduct(productA);
+    verify(cartItemRepository, times(1)).findByProductId(productA.getId());
     verify(cartItemRepository, times(1)).save(any(CartItem.class));
   }
 
   @Test
   void testUpdateCartItemWithPositiveQuantity() {
-    when(cartItemRepository.findById(2L)).thenReturn(Optional.of(cartItemB));
+    when(cartItemRepository.findById(2L)).thenReturn(Mono.just(cartItemB));
     when(cartItemRepository.save(any(CartItem.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
-    CartItemDto result = cartService.updateCartItem(2L, 2L, 15);
-    assertNotNull(result, "Объект не должен быть null.");
-    assertEquals(
-        15, result.getQuantity(), "Кол-во для позиции корзины с id=2 должно быть равно 15.");
+    StepVerifier.create(cartService.updateCartItem(2L, 2L, 15))
+                    .assertNext(updatedCartItem -> {
+                      assertNotNull(updatedCartItem, "Объект не должен быть null.");
+                      assertEquals(
+                              15, updatedCartItem.getQuantity(), "Кол-во для позиции корзины с id=2 должно быть равно 15.");
+                    })
+                            .verifyComplete();
 
     verify(cartItemRepository, times(1)).findById(2L);
     verify(cartItemRepository, times(1)).save(any(CartItem.class));
@@ -113,12 +122,15 @@ public class CartServiceImplTest {
 
   @Test
   void testUpdateCartItemWithZeroQuantity() {
-    when(cartItemRepository.findById(1L)).thenReturn(Optional.of(cartItemA));
-    doNothing().when(cartItemRepository).delete(cartItemA);
+    when(cartItemRepository.findById(1L)).thenReturn(Mono.just(cartItemA));
+    when(cartItemRepository.delete(cartItemA)).thenReturn(Mono.empty());
 
-    CartItemDto result = cartService.updateCartItem(1L, 1L, 0);
-    assertNotNull(result, "Объект не должен быть null.");
-    assertEquals(0, result.getQuantity(), "Кол-во для позиции корзины с id=1 должно быть равно 0.");
+    StepVerifier.create(cartService.updateCartItem(1L, 1L, 0))
+                    .assertNext(removedCartItem -> {
+                      assertNotNull(removedCartItem, "Объект не должен быть null.");
+                      assertEquals(0, removedCartItem.getQuantity(), "Кол-во для позиции корзины с id=1 должно быть равно 0.");
+                    })
+                            .verifyComplete();
 
     verify(cartItemRepository, times(1)).findById(1L);
     verify(cartItemRepository, times(1)).delete(cartItemA);
@@ -126,37 +138,44 @@ public class CartServiceImplTest {
 
   @Test
   void testRemoveFromCart() {
-    doNothing().when(cartItemRepository).deleteById(1L);
+    when(cartItemRepository.deleteById(1L)).thenReturn(Mono.empty());
 
-    assertDoesNotThrow(() -> cartService.removeFromCart(1L));
+    StepVerifier.create(cartService.removeFromCart(1L))
+            .verifyComplete();
     verify(cartItemRepository, times(1)).deleteById(1L);
   }
 
   @Test
   void testGetCartSummary() {
-    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemA, cartItemB));
+    when(cartItemRepository.findAllWithProducts()).thenReturn(Flux.just(cartItemWithProductA, cartItemWithProductB));
 
-    CartDto result = cartService.getCartSummary();
-    assertNotNull(result, "Объект не должен быть null.");
-    assertEquals(
-        BigDecimal.valueOf(2200),
-        result.getCartAmount(),
-        "Общая стоимость товаров в корзине должна быть равна 2200.");
-    assertEquals(List.of(cartItemA, cartItemB), result.getCartItems());
+    StepVerifier.create(cartService.getCartSummary())
+                    .assertNext(cartDto -> {
+                      assertNotNull(cartDto, "Объект не должен быть null.");
+                      assertEquals(
+                              BigDecimal.valueOf(2200),
+                              cartDto.getCartAmount(),
+                              "Общая стоимость товаров в корзине должна быть равна 2200.");
+                      assertEquals(List.of(cartItemWithProductA, cartItemWithProductB), cartDto.getCartItemsWithProduct());
+                    })
+            .verifyComplete();
   }
 
   @Test
   void testGetCartInfo() {
-    when(cartItemRepository.findAll()).thenReturn(List.of(cartItemA, cartItemB));
+    when(cartItemRepository.findAllWithProducts()).thenReturn(Flux.just(cartItemWithProductA, cartItemWithProductB));
 
-    CartInfoDto result = cartService.getCartInfo();
-    assertNotNull(result, "Объект не должен быть null.");
-    assertEquals(
-        12, result.getCartItemsCount(), "Общее количество товаров в корзине должно быть равно 12.");
-    assertEquals(
-        BigDecimal.valueOf(2200),
-        result.getCartAmount(),
-        "Общая стоимость товаров в корзине должна быть равна 2200.");
+    StepVerifier.create(cartService.getCartInfo())
+                    .assertNext(cartInfoDto -> {
+                      assertNotNull(cartInfoDto, "Объект не должен быть null.");
+                      assertEquals(
+                              12, cartInfoDto.getCartItemsCount(), "Общее количество товаров в корзине должно быть равно 12.");
+                      assertEquals(
+                              BigDecimal.valueOf(2200),
+                              cartInfoDto.getCartAmount(),
+                              "Общая стоимость товаров в корзине должна быть равна 2200.");
+                    })
+            .verifyComplete();
   }
 
   @TestConfiguration
