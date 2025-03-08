@@ -58,7 +58,7 @@ public class OrderCustomRepositoryImpl implements OrderCustomRepository {
                         new OrderDto(
                             orderId,
                             items.stream()
-                                .map(OrderItemDto::getPrice)
+                                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                                 .reduce(
                                     BigDecimal.ZERO,
                                     BigDecimal::add), // Суммируем стоимость товаров
