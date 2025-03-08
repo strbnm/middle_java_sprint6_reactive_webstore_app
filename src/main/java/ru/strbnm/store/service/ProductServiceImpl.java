@@ -2,15 +2,13 @@ package ru.strbnm.store.service;
 
 import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.strbnm.store.dto.ProductDto;
-import ru.strbnm.store.entity.Product;
 import ru.strbnm.store.mapper.ProductMapper;
 import ru.strbnm.store.repository.ProductRepository;
-import ru.strbnm.store.repository.spec.ProductSpecifications;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -18,32 +16,32 @@ public class ProductServiceImpl implements ProductService {
   private final ProductMapper productMapper;
 
   @Autowired
-  public ProductServiceImpl(ProductRepository productRepository, ProductMapper productMapper) {
+  public ProductServiceImpl(
+      ProductRepository productRepository, ProductMapper productMapper) {
     this.productRepository = productRepository;
     this.productMapper = productMapper;
   }
 
-  public Page<ProductDto> getFilteredProducts(
+  public Flux<ProductDto> getFilteredProducts(
       String searchText,
       BigDecimal priceFrom,
       BigDecimal priceTo,
       String letter,
-      Pageable pageable) {
+      int page,
+      int size,
+      Sort sorting) {
 
-    Specification<Product> spec =
-        Specification.where(ProductSpecifications.nameOrDescriptionContains(searchText))
-            .and(ProductSpecifications.priceBetween(priceFrom, priceTo))
-            .and(ProductSpecifications.nameStartsWith(letter));
+    return productRepository
+        .findFilteredProducts(searchText, priceFrom, priceTo, letter, page, size, sorting)
+        .map(productMapper::toDTO);
+  }
 
-    return productRepository.findAll(spec, pageable).map(productMapper::toDTO);
+  public Mono<Long> getCountAllProducts(){
+    return productRepository.count();
   }
 
   @Override
-  public ProductDto getProductById(Long productId) {
-    Product existsProduct =
-        productRepository
-            .findById(productId)
-            .orElseThrow(() -> new RuntimeException("Товар не найден"));
-    return productMapper.toDTO(existsProduct);
+  public Mono<ProductDto> getProductById(Long productId) {
+    return productRepository.findById(productId).map(productMapper::toDTO);
   }
 }

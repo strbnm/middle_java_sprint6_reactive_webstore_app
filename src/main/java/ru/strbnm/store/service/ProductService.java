@@ -1,17 +1,21 @@
 package ru.strbnm.store.service;
 
 import java.math.BigDecimal;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.strbnm.store.dto.ProductDto;
 
 public interface ProductService {
-  Page<ProductDto> getFilteredProducts(
+  Flux<ProductDto> getFilteredProducts(
       String searchText,
       BigDecimal priceFrom,
       BigDecimal priceTo,
       String letter,
-      Pageable pageable);
+      int page,
+      int size,
+      Sort sorting);
 
-  ProductDto getProductById(Long productId);
+  Mono<ProductDto> getProductById(Long productId);
+  Mono<Long> getCountAllProducts();
 }
