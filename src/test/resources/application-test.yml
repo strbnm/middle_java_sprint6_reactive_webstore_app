@@ -1,6 +1,6 @@
 spring:
   r2dbc:
-    url: r2dbc:h2:mem:///webstore_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;DATABASE_TO_UPPER=false;MODE=PostgreSQL
+    url: r2dbc:h2:mem:///webstore_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;DATABASE_TO_UPPER=false
     username: sa
     password:
   properties:
