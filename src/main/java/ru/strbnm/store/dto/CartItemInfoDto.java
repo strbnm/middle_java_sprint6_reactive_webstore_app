@@ -7,7 +7,7 @@ import lombok.Value;
 @Value
 @Builder
 public class CartItemInfoDto {
-    CartItemDto cartItem;
-    Integer cartItemsCount;
-    BigDecimal cartAmount;
+  CartItemDto cartItem;
+  Integer cartItemsCount;
+  BigDecimal cartAmount;
 }
