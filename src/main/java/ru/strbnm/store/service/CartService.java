@@ -1,29 +1,31 @@
 package ru.strbnm.store.service;
 
-import java.util.List;
 import java.util.Map;
+
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.strbnm.store.dto.CartDto;
 import ru.strbnm.store.dto.CartInfoDto;
 import ru.strbnm.store.dto.CartItemDto;
 
 public interface CartService {
-  List<CartItemDto> getCartItemsDto();
+  Flux<CartItemDto> getCartItemsDto();
 
   @Transactional
-  CartItemDto addToCart(Long productId, int quantity);
+  Mono<CartItemDto> addToCart(Long productId, int quantity);
 
   @Transactional
-  CartItemDto updateCartItem(Long id, Long productId, int quantity);
+  Mono<CartItemDto> updateCartItem(Long id, Long productId, int quantity);
 
   @Transactional
-  void removeFromCart(Long cartItemId);
+  Mono<Void> removeFromCart(Long cartItemId);
 
   @Transactional
-  CartDto getCartSummary();
+  Mono<CartDto> getCartSummary();
 
   @Transactional
-  CartInfoDto getCartInfo();
+  Mono<CartInfoDto> getCartInfo();
 
-  Map<Long, CartItemDto> getCartItemMap();
+  Mono<Map<Long, CartItemDto>> getCartItemMap();
 }
