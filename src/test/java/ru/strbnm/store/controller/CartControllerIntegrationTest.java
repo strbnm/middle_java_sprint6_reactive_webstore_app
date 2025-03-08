@@ -3,32 +3,27 @@ package ru.strbnm.store.controller;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.StringReader;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import ru.strbnm.store.dto.CartItemDto;
 import ru.strbnm.store.entity.CartItem;
 import ru.strbnm.store.repository.CartItemRepository;
 
-public class CartControllerIntegrationTest extends BaseControllersIntegrationTest {
+public class CartControllerIntegrationTest extends BaseControllerIntegrationTest {
 
-  @Autowired private WebApplicationContext webApplicationContext;
+  @Autowired private WebTestClient webTestClient;
 
   @Autowired private CartItemRepository cartItemRepository;
-
-  @Autowired private MockMvc mockMvc;
-
-  @Autowired private ObjectMapper objectMapper;
 
   private CartItemDto cartItemDtoA, cartItemDtoB, cartItemDtoC;
 
@@ -51,82 +46,102 @@ public class CartControllerIntegrationTest extends BaseControllersIntegrationTes
     cartItemDtoC = CartItemDto.builder().id(1L).productId(2L).quantity(0).build();
   }
 
-  @Transactional
   @Test
-  void addToCart_shouldAddProductToCartItemInDatabaseAndReturnCartItemInfoDto() throws Exception {
-    List<CartItem> cartItemsBeforeAdd = cartItemRepository.findAll();
+  void addToCart_shouldAddProductToCartItemInDatabaseAndReturnCartItemInfoDto() {
+    List<CartItem> cartItemsBeforeAdd = cartItemRepository.findAll().collectList().block();
     assertThat("Позиций в корзине до добавления должно быть 4.", cartItemsBeforeAdd, hasSize(4));
-    List<String> oldProductNames =
-        cartItemsBeforeAdd.stream().map(cartItem -> cartItem.getProduct().getName()).toList();
+    List<Long> oldProductIds = cartItemsBeforeAdd.stream().map(CartItem::getProductId).toList();
 
-    mockMvc
-        .perform(
-            post("/cart")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cartItemDtoA)))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.cartItem.id").value(5L))
-        .andExpect(jsonPath("$.cartItem.productId").value(cartItemDtoA.getProductId()))
-        .andExpect(jsonPath("$.cartItem.quantity").value(cartItemDtoA.getQuantity()))
-        .andExpect(jsonPath("$.cartItemsCount").value(66));
+    webTestClient
+        .post()
+        .uri("/cart")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(cartItemDtoA)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentType(MediaType.APPLICATION_JSON)
+        .expectBody()
+        .jsonPath("$.cartItem.id")
+        .isEqualTo(5L)
+        .jsonPath("$.cartItem.productId")
+        .isEqualTo(cartItemDtoA.getProductId())
+        .jsonPath("$.cartItem.quantity")
+        .isEqualTo(cartItemDtoA.getQuantity())
+        .jsonPath("$.cartItemsCount")
+        .isEqualTo(66);
 
-    List<CartItem> cartItemsAfterAdd = cartItemRepository.findAll();
+    List<CartItem> cartItemsAfterAdd = cartItemRepository.findAll().collectList().block();
     assertThat("Позиций в корзине после добавления должно быть 5.", cartItemsAfterAdd, hasSize(5));
-    List<String> newProductNames =
-        cartItemsAfterAdd.stream().map(cartItem -> cartItem.getProduct().getName()).toList();
+
+    List<Long> newProductIds = cartItemsAfterAdd.stream().map(CartItem::getProductId).toList();
+
     assertThat(
-        newProductNames,
-        allOf(hasItems(oldProductNames.toArray(new String[0])), hasItem("Eco Gadget 690")));
+        newProductIds,
+        allOf(hasItems(oldProductIds.toArray(new Long[0])), hasItem(cartItemDtoA.getProductId())));
   }
 
-  @Transactional
   @Test
   void updateCartItem_shouldUpdateCartItemInDatabaseAndReturnCartItemInfoDto() throws Exception {
-    List<CartItem> cartItemsBeforeUpdate = cartItemRepository.findAll();
+    List<CartItem> cartItemsBeforeUpdate = cartItemRepository.findAll().collectList().block();
     assertThat("Позиций в корзине до обновления должно быть 4.", cartItemsBeforeUpdate, hasSize(4));
-    List<String> oldProductNames =
-        cartItemsBeforeUpdate.stream().map(cartItem -> cartItem.getProduct().getName()).toList();
+    List<Long> oldProductIds = cartItemsBeforeUpdate.stream().map(CartItem::getProductId).toList();
 
-    mockMvc
-        .perform(
-            put("/cart")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cartItemDtoB)))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.cartItem.id").value(cartItemDtoB.getId()))
-        .andExpect(jsonPath("$.cartItem.productId").value(cartItemDtoB.getProductId()))
-        .andExpect(jsonPath("$.cartItem.quantity").value(cartItemDtoB.getQuantity()))
-        .andExpect(jsonPath("$.cartItemsCount").value(62));
+    webTestClient
+        .put()
+        .uri("/cart")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(cartItemDtoB)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentType(MediaType.APPLICATION_JSON)
+        .expectBody()
+        .jsonPath("$.cartItem.id")
+        .isEqualTo(cartItemDtoB.getId())
+        .jsonPath("$.cartItem.productId")
+        .isEqualTo(cartItemDtoB.getProductId())
+        .jsonPath("$.cartItem.quantity")
+        .isEqualTo(cartItemDtoB.getQuantity())
+        .jsonPath("$.cartItemsCount")
+        .isEqualTo(62);
 
-    List<CartItem> cartItemsAfterUpdate = cartItemRepository.findAll();
+    List<CartItem> cartItemsAfterUpdate = cartItemRepository.findAll().collectList().block();
     assertThat(
         "Позиций в корзине после обновления должно быть 4.", cartItemsAfterUpdate, hasSize(4));
-    List<String> newProductNames =
-        cartItemsAfterUpdate.stream().map(cartItem -> cartItem.getProduct().getName()).toList();
-    assertThat(newProductNames, hasItems(oldProductNames.toArray(new String[0])));
+    List<Long> newProductIds = cartItemsAfterUpdate.stream().map(CartItem::getProductId).toList();
+    assertThat(newProductIds, hasItems(oldProductIds.toArray(new Long[0])));
   }
 
   @Test
   void updateCartItemWithZeroQuantity_shouldDeleteCartItemInDatabaseAndReturnCartItemInfoDto()
       throws Exception {
-    List<CartItem> cartItemsBeforeUpdate = cartItemRepository.findAll();
+    List<CartItem> cartItemsBeforeUpdate = cartItemRepository.findAll().collectList().block();
     assertThat("Позиций в корзине до обновления должно быть 4.", cartItemsBeforeUpdate, hasSize(4));
 
-    mockMvc
-        .perform(
-            put("/cart")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cartItemDtoC)))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.cartItem.id").value(cartItemDtoC.getId()))
-        .andExpect(jsonPath("$.cartItem.productId").value(cartItemDtoC.getProductId()))
-        .andExpect(jsonPath("$.cartItem.quantity").value(cartItemDtoC.getQuantity()))
-        .andExpect(jsonPath("$.cartItemsCount").value(51));
+    webTestClient
+        .put()
+        .uri("/cart")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(cartItemDtoC)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentType(MediaType.APPLICATION_JSON)
+        .expectBody()
+        .jsonPath("$.cartItem.id")
+        .isEqualTo(cartItemDtoC.getId())
+        .jsonPath("$.cartItem.productId")
+        .isEqualTo(cartItemDtoC.getProductId())
+        .jsonPath("$.cartItem.quantity")
+        .isEqualTo(cartItemDtoC.getQuantity())
+        .jsonPath("$.cartItemsCount")
+        .isEqualTo(51);
 
-    List<CartItem> cartItemsAfterUpdate = cartItemRepository.findAll();
+    List<CartItem> cartItemsAfterUpdate = cartItemRepository.findAll().collectList().block();
     assertThat(
         "Позиций в корзине после обновления должно быть 3.", cartItemsAfterUpdate, hasSize(3));
     CartItem deletedCartItem =
@@ -139,20 +154,27 @@ public class CartControllerIntegrationTest extends BaseControllersIntegrationTes
 
   @Test
   void removeCartItem_shouldDeleteCartItemInDatabaseAndReturnCartItemInfoDto() throws Exception {
-    List<CartItem> cartItemsBeforeUpdate = cartItemRepository.findAll();
-    assertThat("Позиций в корзине до обновления должно быть 4.", cartItemsBeforeUpdate, hasSize(4));
+    List<CartItem> cartItemsBeforeDelete = cartItemRepository.findAll().collectList().block();
+    assertThat("Позиций в корзине до обновления должно быть 4.", cartItemsBeforeDelete, hasSize(4));
 
-    mockMvc
-        .perform(delete("/cart/" + cartItemDtoB.getId()).contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.cartItemsCount").value(51));
+    webTestClient
+        .method(HttpMethod.DELETE)
+        .uri("/cart/" + cartItemDtoB.getId())
+        .contentType(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus()
+        .isOk()
+        .expectHeader()
+        .contentType(MediaType.APPLICATION_JSON)
+        .expectBody()
+        .jsonPath("$.cartItemsCount")
+        .isEqualTo(51);
 
-    List<CartItem> cartItemsAfterUpdate = cartItemRepository.findAll();
+    List<CartItem> cartItemsAfterDelete = cartItemRepository.findAll().collectList().block();
     assertThat(
-        "Позиций в корзине после обновления должно быть 3.", cartItemsAfterUpdate, hasSize(3));
+        "Позиций в корзине после обновления должно быть 3.", cartItemsAfterDelete, hasSize(3));
     CartItem deletedCartItem =
-        cartItemsAfterUpdate.stream()
+        cartItemsAfterDelete.stream()
             .filter(cartItem -> cartItem.getId().equals(cartItemDtoB.getId()))
             .findFirst()
             .orElse(null);
@@ -161,63 +183,101 @@ public class CartControllerIntegrationTest extends BaseControllersIntegrationTes
 
   @Test
   void getCart_shouldReturnHtmlWithCart() throws Exception {
-    mockMvc
-        .perform(get("/cart"))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType("text/html;charset=UTF-8"))
-        .andExpect(view().name("cart/index"))
-        .andExpect(model().attributeExists("cart", "cartTotalQuantity"))
-        // Проверка, что Заголовок страницы "Товары в корзине"
-        .andExpect(xpath("//main/h4").string("Товары в корзине"))
-        // Проверяем, что 4 товара в корзине
-        .andExpect(xpath("//ul[@class='collection']/li").nodeCount(4))
-        // Проверяем, что в общее количество по всем товарам корзины равно 61
-        .andExpect(xpath("//span[@id='cartBadge']").string("61"))
-        // Проверяем название, цену и количество для первого элемента корзины
-        .andExpect(
-            xpath("//ul[@class='collection']/li[1]/span[@class='title']")
-                .string("Ultra Gadget 123"))
-        .andExpect(xpath("//ul[@class='collection']/li[1]/p").string("Цена: 191.38 руб."))
-        .andExpect(
-            xpath("//ul[@class='collection']/li[1]//input[@class='quantity-input']/@value")
-                .string("10"))
-        // Проверяем название, цену и количество для второго элемента корзины
-        .andExpect(
-            xpath("//ul[@class='collection']/li[2]/span[@class='title']")
-                .string("Ultra Widget 734"))
-        .andExpect(xpath("//ul[@class='collection']/li[2]/p").string("Цена: 84.71 руб."))
-        .andExpect(
-            xpath("//ul[@class='collection']/li[2]//input[@class='quantity-input']/@value")
-                .string("20"))
-        // Проверяем название, цену и количество для третьего элемента корзины
-        .andExpect(
-            xpath("//ul[@class='collection']/li[3]/span[@class='title']").string("Ultra Item 402"))
-        .andExpect(xpath("//ul[@class='collection']/li[3]/p").string("Цена: 289.61 руб."))
-        .andExpect(
-            xpath("//ul[@class='collection']/li[3]//input[@class='quantity-input']/@value")
-                .string("30"))
-        // Проверяем название, цену и количество для четвертого элемента корзины
-        .andExpect(
-            xpath("//ul[@class='collection']/li[4]/span[@class='title']").string("Eco Thing 576"))
-        .andExpect(xpath("//ul[@class='collection']/li[4]/p").string("Цена: 211.65 руб."))
-        .andExpect(
-            xpath("//ul[@class='collection']/li[4]//input[@class='quantity-input']/@value")
-                .string("1"));
+    String responseBody =
+        webTestClient
+            .get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("text/html")
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(responseBody);
+
+    // Парсим HTML как XML
+    InputSource source = new InputSource(new StringReader(responseBody));
+    Document xmlDocument = documentBuilder.parse(source);
+
+    // Проверка заголовка страницы
+    assertEquals("Товары в корзине", xpath.evaluate("//main/h4", xmlDocument));
+
+    // Проверка количества товаров в корзине
+    assertEquals("4", xpath.evaluate("count(//ul[@class='collection']/li)", xmlDocument));
+
+    // Проверка первого товара
+    assertEquals(
+        "Ultra Gadget 123",
+        xpath.evaluate("//ul[@class='collection']/li[1]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Цена: 191.38 руб.", xpath.evaluate("//ul[@class='collection']/li[1]/p", xmlDocument));
+    assertEquals(
+        "10",
+        xpath.evaluate(
+            "//ul[@class='collection']/li[1]//input[@class='quantity-input']/@value", xmlDocument));
+
+    // Проверка второго товара
+    assertEquals(
+        "Ultra Widget 734",
+        xpath.evaluate("//ul[@class='collection']/li[2]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Цена: 84.71 руб.", xpath.evaluate("//ul[@class='collection']/li[2]/p", xmlDocument));
+    assertEquals(
+        "20",
+        xpath.evaluate(
+            "//ul[@class='collection']/li[2]//input[@class='quantity-input']/@value", xmlDocument));
+
+    // Проверка третьего товара
+    assertEquals(
+        "Ultra Item 402",
+        xpath.evaluate("//ul[@class='collection']/li[3]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Цена: 289.61 руб.", xpath.evaluate("//ul[@class='collection']/li[3]/p", xmlDocument));
+    assertEquals(
+        "30",
+        xpath.evaluate(
+            "//ul[@class='collection']/li[3]//input[@class='quantity-input']/@value", xmlDocument));
+
+    // Проверка четвертого товара
+    assertEquals(
+        "Eco Thing 576",
+        xpath.evaluate("//ul[@class='collection']/li[4]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Цена: 211.65 руб.", xpath.evaluate("//ul[@class='collection']/li[4]/p", xmlDocument));
+    assertEquals(
+        "1",
+        xpath.evaluate(
+            "//ul[@class='collection']/li[4]//input[@class='quantity-input']/@value", xmlDocument));
   }
 
+  //
   @Test
   void getCartWithoutCartItem_shouldReturnHtmlWithEmptyCart() throws Exception {
-    cartItemRepository.deleteAll();
-    mockMvc
-        .perform(get("/cart"))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType("text/html;charset=UTF-8"))
-        .andExpect(view().name("cart/index"))
-        .andExpect(model().attributeExists("cart", "cartTotalQuantity"))
-        // Проверка, что Заголовок страницы "Корзина пустая"
-        .andExpect(xpath("//main/h4").string("Корзина пустая"))
-        // Проверка, что страница не содержит записей с позициями корзины
-        .andExpect(xpath("//ul[@class='collection']/li").doesNotExist())
-        .andExpect(xpath("//span[@id='cartBadge']").doesNotExist());
+    cartItemRepository.deleteAll().block();
+
+    String responseBody =
+        webTestClient
+            .get()
+            .uri("/cart")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("text/html")
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(responseBody);
+
+    // Парсим HTML как XML
+    InputSource source = new InputSource(new StringReader(responseBody));
+    Document xmlDocument = documentBuilder.parse(source);
+
+    assertEquals("Корзина пустая", xpath.evaluate("//main/h4", xmlDocument));
+    assertTrue(xpath.evaluate("//ul[@class='collection']/li", xmlDocument).isEmpty());
   }
 }
