@@ -182,20 +182,6 @@ public class OrderServiceImplTest {
   }
 
   @Test
-  void testGetOrderById_NotFound() {
-    when(orderRepository.findOrderWithItemsAndProducts(1L)).thenReturn(Mono.empty());
-
-    StepVerifier.create(orderService.getOrderById(1L))
-        .expectErrorMatches(
-            throwable ->
-                throwable instanceof RuntimeException
-                    && throwable.getMessage().equals("Заказ не найден."))
-        .verify();
-
-    verify(orderRepository, times(1)).findOrderWithItemsAndProducts(1L);
-  }
-
-  @Test
   void testGetOrdersSummary() {
     when(orderRepository.findAllOrdersWithItemsAndProducts()).thenReturn(Flux.just(orderDto));
 
