@@ -12,7 +12,7 @@
         <br/>
     </div>
     <!--Content-->
-    <div th:if="${products.totalElements > 0 and products.totalPages > 0}" class="row pagination-container">
+    <div th:if="${totalElements > 0 and totalPages > 0}" class="row pagination-container">
         <!-- Выпадающий список выбора количества элементов -->
         <div class="col s6 m4">
             <form method="get" th:action="@{/products}">
@@ -29,24 +29,24 @@
         <!-- Пагинация -->
         <div class="col s6 m8">
             <ul class="pagination right">
-                <li th:class="${products.number eq 0} ? 'disabled=&quot;disabled&quot;' : ''">
-                    <a th:if="${not products.first}"
-                       th:href="@{/products(page=${products.number-1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}">
+                <li th:class="${pageNumber == 0} ? 'disabled=&quot;disabled&quot;' : ''">
+                    <a th:if="${pageNumber != 0}"
+                       th:href="@{/products(page=${pageNumber-1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}">
                         <i class="material-icons">chevron_left</i>
                     </a>
-                    <a th:if="${products.first}" href="#"><i class="material-icons">chevron_left</i></a>
+                    <a th:if="${pageNumber == 0}" href="#"><i class="material-icons">chevron_left</i></a>
                 </li>
-                <li th:each="pageNo : ${#numbers.sequence(0, products.totalPages - 1)}"
-                    th:class="${products.number eq pageNo} ? 'active' : 'waves-effect'">
+                <li th:each="pageNo : ${#numbers.sequence(0, totalPages - 1)}"
+                    th:class="${pageNumber == pageNo} ? 'active' : 'waves-effect'">
                     <a th:href="@{/products(page=${pageNo}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}"
                        th:text="${pageNo + 1}"></a>
                 </li>
-                <li th:class="${products.number + 1 ge products.totalPages} ? 'disabled=&quot;disabled&quot;' : ''">
-                    <a th:if="${not products.last}"
-                       th:href="@{/products(page=${products.number+1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}">
+                <li th:class="${pageNumber + 1 ge totalPages} ? 'disabled=&quot;disabled&quot;' : ''">
+                    <a th:if="${pageNumber != totalPages - 1}"
+                       th:href="@{/products(page=${pageNumber+1}, size=${size}, text=${param.text}, price_from=${param.price_from}, price_to=${param.price_to}, letter=${param.letter}, sorting=${selectedSorting})}">
                         <i class="material-icons">chevron_right</i>
                     </a>
-                    <a th:if="${products.last}" href="#"><i class="material-icons">chevron_right</i></a>
+                    <a th:if="${pageNumber == totalPages - 1}" href="#"><i class="material-icons">chevron_right</i></a>
                 </li>
             </ul>
         </div>
