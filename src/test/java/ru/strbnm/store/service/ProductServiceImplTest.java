@@ -1,13 +1,9 @@
 package ru.strbnm.store.service;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -15,16 +11,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import ru.strbnm.store.dto.ProductDto;
 import ru.strbnm.store.entity.Product;
 import ru.strbnm.store.mapper.ProductMapper;
 import ru.strbnm.store.repository.ProductRepository;
+import ru.strbnm.store.utils.ProductSortEnum;
 
 @SpringBootTest(classes = {ProductServiceImpl.class, ProductServiceImplTest.MapperTestConfig.class})
 public class ProductServiceImplTest {
@@ -94,39 +89,57 @@ public class ProductServiceImplTest {
 
   @Test
   void testGetFilteredProducts() {
-    Pageable pageable = PageRequest.of(0, 10);
-    Page<Product> productPage = new PageImpl<>(List.of(productA, productB, productC), pageable, 4);
+    when(productRepository.findFilteredProducts(
+            "Test",
+            BigDecimal.ZERO,
+            BigDecimal.valueOf(1000),
+            "T",
+            0,
+            5,
+            ProductSortEnum.NAME_ASC.getSortExpression()))
+        .thenReturn(Flux.just(productA, productB, productC));
 
-    when(productRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(productPage);
+    StepVerifier.create(
+            productService.getFilteredProducts(
+                "Test",
+                BigDecimal.ZERO,
+                BigDecimal.valueOf(1000),
+                "T",
+                0,
+                5,
+                ProductSortEnum.NAME_ASC.getSortExpression()))
+        .expectNext(productDtoA)
+        .expectNext(productDtoB)
+        .expectNext(productDtoC)
+        .verifyComplete();
 
-    Page<ProductDto> result =
-        productService.getFilteredProducts(
-            "Test", BigDecimal.ZERO, BigDecimal.valueOf(1000), "T", pageable);
-
-    assertNotNull(result, "Объект не должен быть null.");
-    assertEquals(3, result.getTotalElements(), "Объект Page должен содержать 3 элемента.");
-    assertEquals(List.of(productDtoA, productDtoB, productDtoC), result.getContent());
+    verify(productRepository, times(1))
+        .findFilteredProducts(
+            "Test",
+            BigDecimal.ZERO,
+            BigDecimal.valueOf(1000),
+            "T",
+            0,
+            5,
+            ProductSortEnum.NAME_ASC.getSortExpression());
   }
 
   @Test
-  void testGetProductById_WhenProductExists() {
-    when(productRepository.findById(1L)).thenReturn(Optional.of(productA));
+  void testGetProductById() {
+    when(productRepository.findById(1L)).thenReturn(Mono.just(productA));
 
-    ProductDto result = productService.getProductById(1L);
+    StepVerifier.create(productService.getProductById(1L)).expectNext(productDtoA).verifyComplete();
 
-    assertNotNull(result, "Объект не должен быть null.");
-    assertEquals(1L, result.getId(), "Id товара должен быть равен 1.");
-    assertEquals(
-        "Test product A", result.getName(), "Название товара должно быть равно 'Test product A'.");
+    verify(productRepository, times(1)).findById(1L);
   }
 
   @Test
-  void testGetProductById_WhenProductNotFound() {
-    when(productRepository.findById(1L)).thenReturn(Optional.empty());
+  void testGetCountAllProducts() {
+    when(productRepository.count()).thenReturn(Mono.just(15L));
 
-    RuntimeException exception =
-        assertThrows(RuntimeException.class, () -> productService.getProductById(1L));
-    assertEquals("Товар не найден", exception.getMessage());
+    StepVerifier.create(productService.getCountAllProducts()).expectNext(15L).verifyComplete();
+
+    verify(productRepository, times(1)).count();
   }
 
   @TestConfiguration
