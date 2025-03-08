@@ -1,0 +1,40 @@
+spring:
+  r2dbc:
+    url: r2dbc:h2:mem:///webstore_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;DATABASE_TO_UPPER=false;MODE=PostgreSQL
+    username: sa
+    password:
+  properties:
+    loggingLevel: DEBUG
+
+  liquibase:
+    enabled: true
+    url: jdbc:h2:mem:webstore_db
+    user: sa
+    password:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    contexts: test
+
+  sql:
+    init:
+      mode: never
+
+  thymeleaf:
+    check-template-location: true
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    cache: false
+
+server:
+  servlet:
+    context-path: /
+
+app:
+  product:
+    image:
+      dir: C:\Users\strbnm\dev\JAVA\Sprint6\store\src\main\resources\static\uploads
+
+logging:
+  level:
+    org.springframework.r2dbc.core: DEBUG  # Логирование SQL-запросов
+    io.r2dbc.h2: DEBUG                     # Для H2
