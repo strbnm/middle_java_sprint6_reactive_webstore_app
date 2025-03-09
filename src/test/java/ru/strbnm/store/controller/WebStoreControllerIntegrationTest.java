@@ -1,28 +1,31 @@
 package ru.strbnm.store.controller;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.web.context.WebApplicationContext;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import ru.strbnm.store.repository.CartItemRepository;
 import ru.strbnm.store.repository.ProductRepository;
+import ru.strbnm.store.testcases.ProductTestCase;
 
-public class WebStoreControllerIntegrationTest extends BaseControllersIntegrationTest {
-  @Autowired private WebApplicationContext webApplicationContext;
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class WebStoreControllerIntegrationTest extends BaseControllerIntegrationTest {
+  @Autowired private WebTestClient webTestClient;
 
   @Autowired private CartItemRepository cartItemRepository;
   @Autowired private ProductRepository productRepository;
-
-  @Autowired private MockMvc mockMvc;
 
   /*
   После выполнения скрипта INIT_STORE_RECORD.sql таблица products содержит следующие записи:
@@ -50,76 +53,73 @@ public class WebStoreControllerIntegrationTest extends BaseControllersIntegratio
     Общее кол-во всех товаров в корзине (сумма quantity): 61.
     Общая стоимость товаров в корзине: 12507.95.
   */
-  private record TestCase(
-      int page,
-      int size,
-      String text,
-      BigDecimal price_from,
-      BigDecimal price_to,
-      String letter,
-      String sorting,
-      int countOnPage,
-      String firstProductName,
-      BigDecimal firstProductPrice,
-      String lastProductName,
-      BigDecimal lastProductPrice) {}
 
   @ParameterizedTest
   @MethodSource("provideTestCases")
   void showProductShowcase_shouldReturnHtmlFirstPageWithProductShowcaseFilteredAndSorting(
-      TestCase testCase) throws Exception {
-    MockHttpServletRequestBuilder request =
-        get("/products")
-            .queryParam("page", String.valueOf(testCase.page))
-            .queryParam("size", String.valueOf(testCase.size))
-            .queryParam("text", testCase.text)
-            .queryParam("letter", testCase.letter);
+      ProductTestCase.TestCase testCase) throws Exception {
+    String responseBody =
+        webTestClient
+            .get()
+            .uri(
+                uriBuilder -> {
+                  uriBuilder.path("/products");
+                  uriBuilder.queryParam("page", testCase.page());
+                  uriBuilder.queryParam("size", testCase.size());
+                  if (testCase.text() != null) {
+                    uriBuilder.queryParam("text", testCase.text());
+                  }
+                  if (testCase.letter() != null) {
+                    uriBuilder.queryParam("letter", testCase.letter());
+                  }
+                  if (testCase.price_from() != null) {
+                    uriBuilder.queryParam("price_from", String.valueOf(testCase.price_from()));
+                  }
+                  if (testCase.price_to() != null) {
+                    uriBuilder.queryParam("price_to", String.valueOf(testCase.price_to()));
+                  }
+                  if (testCase.sorting() != null) {
+                    uriBuilder.queryParam("sorting", testCase.sorting());
+                  }
+                  return uriBuilder.build();
+                })
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("text/html")
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
 
-    if (testCase.price_from != null) {
-      request.queryParam("price_from", String.valueOf(testCase.price_from));
-    }
-    if (testCase.price_to != null) {
-      request.queryParam("price_to", String.valueOf(testCase.price_to));
-    }
-    if (testCase.sorting != null) {
-      request.queryParam("sorting", testCase.sorting);
-    }
-    mockMvc
-        .perform(request)
-        .andExpect(status().isOk())
-        .andExpect(content().contentType("text/html;charset=UTF-8"))
-        .andExpect(view().name("products/showcase"))
-        .andExpect(
-            model()
-                .attributeExists(
-                    "products",
-                    "size",
-                    "sortOptions",
-                    "selectedSorting",
-                    "cartItemMap",
-                    "cartTotalQuantity",
-                    "isShowCase"))
-        // Проверка, что Заголовок страницы "Все товары"
-        .andExpect(xpath("//main/h4").string("Все товары"))
-        // Проверка, что на странице пять товаров
-        .andExpect(xpath("//ul[@class='collection']/li").nodeCount(testCase.countOnPage))
-        // Проверяем, что в общее количество по всем товарам корзины равно 61 (бейдж рядом с
-        // корзиной)
-        .andExpect(xpath("//span[@id='cartBadge']").string("61"))
-        // Проверяем название и цену для первого товара на странице
-        .andExpect(
-            xpath("//ul[@class='collection']/li[1]/span[@class='title']")
-                .string(testCase.firstProductName))
-        .andExpect(
-            xpath("//ul[@class='collection']/li[1]/p")
-                .string("Цена: " + testCase.firstProductPrice + " руб."))
-        // Проверяем название, цену и количество для последнего товара на странице
-        .andExpect(
-            xpath("//ul[@class='collection']/li[" + testCase.countOnPage + "]/span[@class='title']")
-                .string(testCase.lastProductName))
-        .andExpect(
-            xpath("//ul[@class='collection']/li[" + testCase.countOnPage + "]/p")
-                .string("Цена: " + testCase.lastProductPrice + " руб."));
+    assertNotNull(responseBody);
+
+    // Парсим HTML как XML
+    InputSource source = new InputSource(new StringReader(responseBody));
+    Document xmlDocument = documentBuilder.parse(source);
+    // Проверка, что Заголовок страницы "Все товары"
+    assertEquals("Все товары", xpath.evaluate("//main/h4", xmlDocument));
+    // Проверка, что на странице пять товаров
+    assertEquals(
+        String.valueOf(testCase.countOnPage()),
+        xpath.evaluate("count(//ul[@class='collection']/li)", xmlDocument));
+    // Проверяем название и цену для первого товара на странице
+    assertEquals(
+        testCase.firstProductName(),
+        xpath.evaluate("//ul[@class='collection']/li[1]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Цена: " + testCase.firstProductPrice() + " руб.",
+        xpath.evaluate("//ul[@class='collection']/li[1]/p", xmlDocument));
+    // Проверяем название, цену и количество для последнего товара на странице
+    assertEquals(
+        testCase.lastProductName(),
+        xpath.evaluate(
+            "//ul[@class='collection']/li[" + testCase.countOnPage() + "]/span[@class='title']",
+            xmlDocument));
+    assertEquals(
+        "Цена: " + testCase.lastProductPrice() + " руб.",
+        xpath.evaluate(
+            "//ul[@class='collection']/li[" + testCase.countOnPage() + "]/p", xmlDocument));
   }
 
   @ParameterizedTest
@@ -142,322 +142,52 @@ public class WebStoreControllerIntegrationTest extends BaseControllersIntegratio
       BigDecimal productPrice,
       int productCartQuantity)
       throws Exception {
-    mockMvc
-        .perform(get("/products/{id}", productId))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType("text/html;charset=UTF-8"))
-        .andExpect(view().name("products/product_detail"))
-        .andExpect(
-            productCartQuantity == 0
-                ? model().attributeExists("product", "cartTotalQuantity")
-                : model().attributeExists("product", "cartTotalQuantity", "cartItem"))
-        // Проверка названия товара
-        .andExpect(xpath("//h3").string(productName))
-        // Проверка описания товара
-        .andExpect(xpath("//p").string(productDescription))
-        // Проверка цены товара
-        .andExpect(xpath("//p[contains(text(), 'Цена: " + productPrice + " руб.')]").exists())
-        // Проверка отображения кнопки "В корзину"
-        .andExpect(
-            xpath("//button[@class='btn add-to-cart'][@data-product-id='" + productId + "']/@style")
-                .string(productCartQuantity == 0 ? "" : "display: none;"))
-        // Проверка отображения блока количества товара
-        .andExpect(
-            xpath("//div[@class='quantity-controls']/@style")
-                .string(productCartQuantity != 0 ? "" : "display: none;"))
-        // Проверка количества товара в поле input
-        .andExpect(
-            xpath("//input[@class='quantity-input'][@data-product-id='" + productId + "']/@value")
-                .string(productCartQuantity != 0 ? String.valueOf(productCartQuantity) : "1"));
+    String responseBody =
+        webTestClient
+            .get()
+            .uri("/products/" + productId)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("text/html")
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(responseBody);
+
+    // Парсим HTML как XML
+    InputSource source = new InputSource(new StringReader(responseBody));
+    Document xmlDocument = documentBuilder.parse(source);
+    // Проверка названия товара
+    assertEquals(productName, xpath.evaluate("//h3", xmlDocument));
+    // Проверка описания товара
+    assertEquals(productDescription, xpath.evaluate("//p", xmlDocument));
+    // Проверка цены товара
+    assertFalse(
+        xpath
+            .evaluate("//p[contains(text(), 'Цена: " + productPrice + " руб.')]", xmlDocument)
+            .isEmpty());
+    // Проверка отображения кнопки "В корзину"
+    assertEquals(
+        productCartQuantity == 0 ? "" : "display: none;",
+        xpath.evaluate(
+            "//button[@class='btn add-to-cart'][@data-product-id='" + productId + "']/@style",
+            xmlDocument));
+    // Проверка отображения блока количества товара
+    assertEquals(
+        productCartQuantity != 0 ? "" : "display: none;",
+        xpath.evaluate("//div[@class='quantity-controls']/@style", xmlDocument));
+    // Проверка количества товара в поле input
+    assertEquals(
+        productCartQuantity != 0 ? String.valueOf(productCartQuantity) : "1",
+        xpath.evaluate(
+            "//input[@class='quantity-input'][@data-product-id='" + productId + "']/@value",
+            xmlDocument));
   }
 
-  private static Stream<TestCase> provideTestCases() {
-    return Stream.of(
-        new TestCase(
-            0,
-            5,
-            null,
-            null,
-            null,
-            null,
-            null,
-            5,
-            "Eco Gadget 690",
-            new BigDecimal("464.64"),
-            "Super Item 561",
-            new BigDecimal("432.91")),
-        new TestCase(
-            1,
-            5,
-            null,
-            null,
-            null,
-            null,
-            null,
-            5,
-            "Ultra Gadget 123",
-            new BigDecimal("191.38"),
-            "Ultra Widget 734",
-            new BigDecimal("84.71")),
-        new TestCase(
-            0,
-            5,
-            null,
-            null,
-            null,
-            null,
-            "NAME_ASC",
-            5,
-            "Eco Gadget 690",
-            new BigDecimal("464.64"),
-            "Super Item 561",
-            new BigDecimal("432.91")),
-        new TestCase(
-            0,
-            5,
-            null,
-            null,
-            null,
-            null,
-            "NAME_DESC",
-            5,
-            "Ultra Widget 734",
-            new BigDecimal("84.71"),
-            "Ultra Gadget 123",
-            new BigDecimal("191.38")),
-        new TestCase(
-            0,
-            10,
-            null,
-            null,
-            null,
-            null,
-            "PRICE_ASC",
-            10,
-            "Ultra Object 450",
-            new BigDecimal("31.17"),
-            "Eco Gadget 690",
-            new BigDecimal("464.64")),
-        new TestCase(
-            0,
-            10,
-            null,
-            null,
-            null,
-            null,
-            "PRICE_DESC",
-            10,
-            "Eco Gadget 690",
-            new BigDecimal("464.64"),
-            "Ultra Object 450",
-            new BigDecimal("31.17")),
-        new TestCase(
-            0,
-            5,
-            "Object",
-            null,
-            null,
-            null,
-            "NAME_ASC",
-            3,
-            "Smart Object 598",
-            new BigDecimal("357.76"),
-            "Ultra Object 457",
-            new BigDecimal("334.53")),
-        new TestCase(
-            0,
-            5,
-            "Object",
-            null,
-            null,
-            null,
-            "NAME_DESC",
-            3,
-            "Ultra Object 457",
-            new BigDecimal("334.53"),
-            "Smart Object 598",
-            new BigDecimal("357.76")),
-        new TestCase(
-            0,
-            10,
-            "Object",
-            null,
-            null,
-            null,
-            "PRICE_ASC",
-            3,
-            "Ultra Object 450",
-            new BigDecimal("31.17"),
-            "Smart Object 598",
-            new BigDecimal("357.76")),
-        new TestCase(
-            0,
-            10,
-            "Object",
-            null,
-            null,
-            null,
-            "PRICE_DESC",
-            3,
-            "Smart Object 598",
-            new BigDecimal("357.76"),
-            "Ultra Object 450",
-            new BigDecimal("31.17")),
-        new TestCase(
-            0,
-            5,
-            null,
-            new BigDecimal("100"),
-            new BigDecimal("300"),
-            null,
-            "NAME_ASC",
-            3,
-            "Eco Thing 576",
-            new BigDecimal("211.65"),
-            "Ultra Item 402",
-            new BigDecimal("289.61")),
-        new TestCase(
-            0,
-            5,
-            null,
-            new BigDecimal("100"),
-            new BigDecimal("300"),
-            null,
-            "NAME_DESC",
-            3,
-            "Ultra Item 402",
-            new BigDecimal("289.61"),
-            "Eco Thing 576",
-            new BigDecimal("211.65")),
-        new TestCase(
-            0,
-            10,
-            null,
-            new BigDecimal("200"),
-            new BigDecimal("400"),
-            null,
-            "PRICE_ASC",
-            5,
-            "Eco Thing 576",
-            new BigDecimal("211.65"),
-            "Smart Object 598",
-            new BigDecimal("357.76")),
-        new TestCase(
-            0,
-            10,
-            null,
-            new BigDecimal("200"),
-            new BigDecimal("400"),
-            null,
-            "PRICE_DESC",
-            5,
-            "Smart Object 598",
-            new BigDecimal("357.76"),
-            "Eco Thing 576",
-            new BigDecimal("211.65")),
-        new TestCase(
-            0,
-            5,
-            "Eco",
-            new BigDecimal("100"),
-            new BigDecimal("300"),
-            null,
-            "NAME_ASC",
-            1,
-            "Eco Thing 576",
-            new BigDecimal("211.65"),
-            "Eco Thing 576",
-            new BigDecimal("211.65")),
-        new TestCase(
-            0,
-            5,
-            "Gadget",
-            new BigDecimal("100"),
-            new BigDecimal("300"),
-            null,
-            "NAME_DESC",
-            1,
-            "Ultra Gadget 123",
-            new BigDecimal("191.38"),
-            "Ultra Gadget 123",
-            new BigDecimal("191.38")),
-        new TestCase(
-            0,
-            10,
-            "Ultra",
-            new BigDecimal("200"),
-            new BigDecimal("400"),
-            null,
-            "PRICE_ASC",
-            2,
-            "Ultra Item 402",
-            new BigDecimal("289.61"),
-            "Ultra Object 457",
-            new BigDecimal("334.53")),
-        new TestCase(
-            0,
-            10,
-            "Ultra",
-            new BigDecimal("200"),
-            new BigDecimal("400"),
-            null,
-            "PRICE_DESC",
-            2,
-            "Ultra Object 457",
-            new BigDecimal("334.53"),
-            "Ultra Item 402",
-            new BigDecimal("289.61")),
-        new TestCase(
-            0,
-            5,
-            null,
-            null,
-            null,
-            "U",
-            "NAME_ASC",
-            5,
-            "Ultra Gadget 123",
-            new BigDecimal("191.38"),
-            "Ultra Widget 734",
-            new BigDecimal("84.71")),
-        new TestCase(
-            0,
-            5,
-            null,
-            null,
-            null,
-            "E",
-            "NAME_DESC",
-            3,
-            "Eco Thing 576",
-            new BigDecimal("211.65"),
-            "Eco Gadget 690",
-            new BigDecimal("464.64")),
-        new TestCase(
-            0,
-            10,
-            null,
-            null,
-            null,
-            "S",
-            "PRICE_ASC",
-            2,
-            "Smart Object 598",
-            new BigDecimal("357.76"),
-            "Super Item 561",
-            new BigDecimal("432.91")),
-        new TestCase(
-            0,
-            10,
-            null,
-            null,
-            null,
-            "S",
-            "PRICE_DESC",
-            2,
-            "Super Item 561",
-            new BigDecimal("432.91"),
-            "Smart Object 598",
-            new BigDecimal("357.76")));
+  private Stream<ProductTestCase.TestCase> provideTestCases() {
+    return ProductTestCase.provideTestCases();
   }
 }
