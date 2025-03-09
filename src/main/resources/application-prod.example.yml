@@ -1,0 +1,46 @@
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://postgresql:5432/web_store_db
+    username: web_store_app_user
+    password: web_store_app_password
+    pool:
+      enabled: true                               # Включение пула соединений
+      initial-size: 10                            # Начальное количество соединений в пуле
+      max-size: 50                                # Максимальное количество соединений
+      max-idle-time: 30s                          # Время бездействия соединения перед закрытием
+      max-life-time: 10m                          # Максимальное время жизни соединения
+      validation-query: SELECT 1                  # SQL-запрос для проверки работоспособности соединения
+
+  liquibase:
+    enabled: true
+    url: jdbc:postgresql://postgresql:5432/web_store_db
+    user: web_store_app_user
+    password: web_store_app_password
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    contexts: prod
+
+  sql:
+    init:
+      mode: never
+
+  thymeleaf:
+    check-template-location: true
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    cache: false
+
+server:
+  servlet:
+    context-path: /
+
+app:
+  product:
+    image:
+      dir: /opt/images
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
