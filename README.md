@@ -1,20 +1,21 @@
 ### Приложение-блог с использованием Spring Framework
 
-Проект приложения "Витрина интернет-магазина", созданный с помощью Spring Boot в рамках выполнения задания спринта 5 курса Middle-Java Яндекс.Практикум.
+Проект приложения "Витрина интернет-магазина", созданный при помощи Spring Data и Spring Web: Reactive Stack в рамках выполнения задания спринта 6 курса Middle-Java Яндекс.Практикум.
 - Spring Boot 3.4.1
-- Hibernate ORM + JPA
+- R2DBC
+- WebFlux
 - Thymeleaf
 - Lombok
 
 #### Сборка приложения
 
 Перед сборкой приложения, при необходимости, откорректировать файл свойств для prod и переименовать файл в
-`application-prod.properties`:
+`application-prod.yaml`:
 
- - [application-prod.properties.example](src/main/resources/application-prod.properties.example).
+ - [application-prod.example.yml](src/main/resources/application-prod.example.yml).
 
 `app.product.image.dir` - директория для сохранения файлов изображений. При запуске в Docker оставить `/opt/images`.
-При использовании с локальным Tomcat указать абсолютный путь к директории.
+При локальном запуске указать абсолютный путь к директории.
 
 Для сборки приложения использовать команду
 ```shell
@@ -39,10 +40,10 @@ docker compose up -d --build
 
 Для локального запуска web-приложения выполнить команду:
 ```shell
-java -Dspring.profiles.active=prod -jar build/libs/sprint5-practicum-homework-1.0.0.jar
+java -D"spring.profiles.active=local" -jar build/libs/sprint6-practicum-homework-1.0.0.jar
 ```
 Предварительно должна быть запущена база данных, которая будет использоваться web-приложением и уточнены параметры 
-подключения к базе данных в файле свойств.
+подключения к базе данных в файле свойств [application-local.yaml](src/main/resources/application-local.yml).
 
 #### Загрузка информации о товарах
 
