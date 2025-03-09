@@ -6,7 +6,7 @@ RUN mkdir -p /opt/images
 
 WORKDIR /opt/app
 
-COPY build/libs/sprint5-practicum-homework-1.0.0.jar app.jar
+COPY build/libs/sprint6-practicum-homework-1.0.0.jar app.jar
 COPY build/resources/main/static/uploads/*.png /opt/images
 
 RUN chmod +x app.jar && chown -R app:app /opt/images /opt/app
