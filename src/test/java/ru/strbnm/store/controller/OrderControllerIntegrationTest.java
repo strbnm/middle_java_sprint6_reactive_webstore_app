@@ -4,22 +4,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.context.WebApplicationContext;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import reactor.test.StepVerifier;
-import ru.strbnm.store.entity.CartItem;
-import ru.strbnm.store.entity.Order;
-import ru.strbnm.store.entity.OrderItem;
 import ru.strbnm.store.repository.CartItemRepository;
 import ru.strbnm.store.repository.OrderItemRepository;
 import ru.strbnm.store.repository.OrderRepository;
@@ -63,117 +57,181 @@ public class OrderControllerIntegrationTest extends BaseControllerIntegrationTes
 
   @Test
   void checkoutCartAndCreateOrder_shouldCreateOrderInDatabaseAndRedirect() throws Exception {
-    List<Order> ordersBeforeCreateOrder = orderRepository.findAll().collectList().block();
-    List<OrderItem> orderItemsBeforeCreateOrder = orderItemRepository.findAll().collectList().block();
-    List<CartItem> cartItemsBeforeCreateOrder = cartItemRepository.findAll().collectList().block();
-    assertThat(
-        "Количество заказов перед оформлением нового заказа должно быть равно 3.",
-        ordersBeforeCreateOrder,
-        hasSize(3));
-    assertThat(
-        "Количество позиций заказов перед оформлением нового заказа должно быть равно 6.",
-        orderItemsBeforeCreateOrder,
-        hasSize(6));
-    assertThat(
-        "Количество позиций корзины перед оформлением нового заказа должно быть равно 4.",
-        cartItemsBeforeCreateOrder,
-        hasSize(4));
+    StepVerifier.create(orderRepository.findAll().collectList())
+        .assertNext(
+            orders ->
+                assertThat(
+                    "Количество заказов перед оформлением нового заказа должно быть равно 3.",
+                    orders,
+                    hasSize(3)))
+        .verifyComplete();
+
+    StepVerifier.create(orderItemRepository.findAll().collectList())
+        .assertNext(
+            orderItems ->
+                assertThat(
+                    "Количество позиций заказов перед оформлением нового заказа должно быть равно 6.",
+                    orderItems,
+                    hasSize(6)))
+        .verifyComplete();
+
+    StepVerifier.create(cartItemRepository.findAll().collectList())
+        .assertNext(
+            cartItems ->
+                assertThat(
+                    "Количество позиций корзины перед оформлением нового заказа должно быть равно 4.",
+                    cartItems,
+                    hasSize(4)))
+        .verifyComplete();
 
     webTestClient
-            .post()
-            .uri("/orders/checkout")
-                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .exchange()
-            .expectStatus()
-                    .is3xxRedirection()
-            .expectHeader().valueEquals("Location", "/orders/4");
+        .post()
+        .uri("/orders/checkout")
+        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+        .exchange()
+        .expectStatus()
+        .is3xxRedirection()
+        .expectHeader()
+        .valueEquals("Location", "/orders/4");
+    StepVerifier.create(orderRepository.findAll().collectList())
+        .assertNext(
+            orders ->
+                assertThat(
+                    "Количество заказов после оформления заказа должно быть равно 4.",
+                    orders,
+                    hasSize(4)))
+        .verifyComplete();
 
-    List<Order> ordersAfterCreateOrder = orderRepository.findAll().collectList().block();
-    List<OrderItem> orderItemsAfterCreateOrder = orderItemRepository.findAll().collectList().block();
-    List<CartItem> cartItemsAfterCreateOrder = cartItemRepository.findAll().collectList().block();
-    assertThat(
-        "Количество заказов после оформления заказа должно быть равно 4.",
-        ordersAfterCreateOrder,
-        hasSize(4));
-    assertThat(
-        "Количество позиций заказов после оформления заказа должно быть равно 10.",
-        orderItemsAfterCreateOrder,
-        hasSize(10));
-    assertThat(
-        "Количество позиций корзины после оформления заказа должно быть равно 0.",
-        cartItemsAfterCreateOrder,
-        hasSize(0));
+    StepVerifier.create(orderItemRepository.findAll().collectList())
+        .assertNext(
+            orderItems ->
+                assertThat(
+                    "Количество позиций заказов после оформления заказа должно быть равно 10.",
+                    orderItems,
+                    hasSize(10)))
+        .verifyComplete();
 
-    orderRepository.findOrderWithItemsAndProducts(4L)
-                    .as(StepVerifier::create)
-                            .assertNext(createdOrder -> {
-                              assertNotNull(createdOrder, "Возвращаемый объект не должен быть null.");
-                              assertEquals(
-                                      BigDecimal.valueOf(12507.95),
-                                      createdOrder.getTotalPrice(),
-                                      "Общая стоимость заказа с id=4 должна быть равна 12507.95.");
-                              assertThat(
-                                      "Количество наименований товаров в заказе должно быть 4.",
-                                      createdOrder.getItems(),
-                                      hasSize(4));
-                            })
-            .verifyComplete();
+    StepVerifier.create(cartItemRepository.findAll().collectList())
+        .assertNext(
+            cartItems ->
+                assertThat(
+                    "Количество позиций корзины после оформления заказа должно быть равно 0.",
+                    cartItems,
+                    hasSize(0)))
+        .verifyComplete();
 
+    StepVerifier.create(orderRepository.findOrderWithItemsAndProducts(4L))
+        .assertNext(
+            createdOrder -> {
+              assertNotNull(createdOrder, "Возвращаемый объект не должен быть null.");
+              assertEquals(
+                  BigDecimal.valueOf(12507.95),
+                  createdOrder.getTotalPrice(),
+                  "Общая стоимость заказа с id=4 должна быть равна 12507.95.");
+              assertThat(
+                  "Количество наименований товаров в заказе должно быть 4.",
+                  createdOrder.getItems(),
+                  hasSize(4));
+            })
+        .verifyComplete();
   }
 
-//  @Test
-//  void getOrders_shouldReturnHtmlWithListOrders() throws Exception {
-//    mockMvc
-//        .perform(get("/orders").contentType("text/html;charset=UTF-8"))
-//        .andExpect(content().contentType("text/html;charset=UTF-8"))
-//        .andExpect(view().name("orders/index"))
-//        .andExpect(model().attributeExists("orders", "cartTotalQuantity", "totalOrdersAmount"))
-//        // Проверка, что Заголовок страницы "Все заказы"
-//        .andExpect(xpath("//main/h4").string("Все заказы"))
-//        // Проверяем, что на странице представлено 3 заказа
-//        .andExpect(xpath("//ul[@class='collection']/li").nodeCount(3))
-//        // Проверяем название, цену и количество для первого заказа
-//        .andExpect(xpath("//ul[@class='collection']/li[1]/span[@class='title']").string("Заказ #1"))
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[1]/p[1]").string("Количество позиций в заказе: 2"))
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[1]/p[2]").string("Сумма заказа: 6319.05 руб."))
-//        // Проверяем название, цену и количество для второго заказа
-//        .andExpect(xpath("//ul[@class='collection']/li[2]/span[@class='title']").string("Заказ #2"))
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[2]/p[1]").string("Количество позиций в заказе: 1"))
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[2]/p[2]").string("Сумма заказа: 677.68 руб."))
-//        // Проверяем название, цену и количество для третьего заказа
-//        .andExpect(xpath("//ul[@class='collection']/li[3]/span[@class='title']").string("Заказ #3"))
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[3]/p[1]").string("Количество позиций в заказе: 3"))
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[3]/p[2]").string("Сумма заказа: 6210.91 руб."));
-//  }
-//
-//  @Test
-//  void getOrderById_shouldReturnHtmlWithOrderDetail() throws Exception {
-//    long orderId = 1L;
-//    mockMvc
-//        .perform(get("/orders/" + orderId).contentType("text/html;charset=UTF-8"))
-//        .andExpect(content().contentType("text/html;charset=UTF-8"))
-//        .andExpect(view().name("orders/order_detail"))
-//        .andExpect(model().attributeExists("order", "cartTotalQuantity", "title"))
-//        // Проверка, что Заголовок страницы "Состав заказа #1"
-//        .andExpect(xpath("//main/h4").string("Состав заказа #" + orderId))
-//        // Проверяем, что на странице представлено 2 позиции товара в заказе 1
-//        .andExpect(xpath("//ul[@class='collection']/li").nodeCount(2))
-//        // Проверяем название, цену и количество товара для первой позиции заказа
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[1]/span[@class='title']").string("Eco Gadget 690"))
-//        .andExpect(xpath("//ul[@class='collection']/li[1]/p[1]").string("Цена: 464.64 руб."))
-//        .andExpect(xpath("//ul[@class='collection']/li[1]/p[2]").string("Количество: 10"))
-//        // Проверяем название, цену и количество товара для второй позиции заказа
-//        .andExpect(
-//            xpath("//ul[@class='collection']/li[2]/span[@class='title']")
-//                .string("Ultra Object 457"))
-//        .andExpect(xpath("//ul[@class='collection']/li[2]/p[1]").string("Цена: 334.53 руб."))
-//        .andExpect(xpath("//ul[@class='collection']/li[2]/p[2]").string("Количество: 5"));
-//  }
+  @Test
+  void getOrders_shouldReturnHtmlWithListOrders() throws Exception {
+    String responseBody =
+        webTestClient
+            .get()
+            .uri("/orders")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("text/html")
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(responseBody);
+
+    // Парсим HTML как XML
+    InputSource source = new InputSource(new StringReader(responseBody));
+    Document xmlDocument = documentBuilder.parse(source);
+    // Проверка, что Заголовок страницы "Все заказы"
+    assertEquals("Все заказы", xpath.evaluate("//main/h4", xmlDocument));
+    // Проверяем, что на странице представлено 3 заказа
+    assertEquals("3", xpath.evaluate("count(//ul[@class='collection']/li)", xmlDocument));
+    // Проверяем название, цену и количество для первого заказа
+    assertEquals(
+        "Заказ #1",
+        xpath.evaluate("//ul[@class='collection']/li[1]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Количество позиций в заказе: 2",
+        xpath.evaluate("//ul[@class='collection']/li[1]/p[1]", xmlDocument));
+    assertEquals(
+        "Сумма заказа: 6319.05 руб.",
+        xpath.evaluate("//ul[@class='collection']/li[1]/p[2]", xmlDocument));
+    // Проверяем название, цену и количество для второго заказа
+    assertEquals(
+        "Заказ #2",
+        xpath.evaluate("//ul[@class='collection']/li[2]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Количество позиций в заказе: 1",
+        xpath.evaluate("//ul[@class='collection']/li[2]/p[1]", xmlDocument));
+    assertEquals(
+        "Сумма заказа: 677.68 руб.",
+        xpath.evaluate("//ul[@class='collection']/li[2]/p[2]", xmlDocument));
+    // Проверяем название, цену и количество для третьего заказа
+    assertEquals(
+        "Заказ #3",
+        xpath.evaluate("//ul[@class='collection']/li[3]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Количество позиций в заказе: 3",
+        xpath.evaluate("//ul[@class='collection']/li[3]/p[1]", xmlDocument));
+    assertEquals(
+        "Сумма заказа: 6210.91 руб.",
+        xpath.evaluate("//ul[@class='collection']/li[3]/p[2]", xmlDocument));
+  }
+
+  @Test
+  void getOrderById_shouldReturnHtmlWithOrderDetail() throws Exception {
+    long orderId = 1L;
+    String responseBody =
+        webTestClient
+            .get()
+            .uri("/orders/" + orderId)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectHeader()
+            .contentType("text/html")
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    assertNotNull(responseBody);
+
+    // Парсим HTML как XML
+    InputSource source = new InputSource(new StringReader(responseBody));
+    Document xmlDocument = documentBuilder.parse(source);
+    // Проверка, что Заголовок страницы "Состав заказа #1"
+    assertEquals("Состав заказа #" + orderId, xpath.evaluate("//main/h4", xmlDocument));
+    // Проверяем, что на странице представлено 2 позиции товара в заказе 1
+    assertEquals("2", xpath.evaluate("count(//ul[@class='collection']/li)", xmlDocument));
+    // Проверяем название, цену и количество товара для первой позиции заказа
+    assertEquals(
+        "Eco Gadget 690",
+        xpath.evaluate("//ul[@class='collection']/li[1]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Цена: 464.64 руб.", xpath.evaluate("//ul[@class='collection']/li[1]/p[1]", xmlDocument));
+    assertEquals(
+        "Количество: 10", xpath.evaluate("//ul[@class='collection']/li[1]/p[2]", xmlDocument));
+    // Проверяем название, цену и количество товара для второй позиции заказа
+    assertEquals(
+        "Ultra Object 457",
+        xpath.evaluate("//ul[@class='collection']/li[2]/span[@class='title']", xmlDocument));
+    assertEquals(
+        "Цена: 334.53 руб.", xpath.evaluate("//ul[@class='collection']/li[2]/p[1]", xmlDocument));
+    assertEquals(
+        "Количество: 5", xpath.evaluate("//ul[@class='collection']/li[2]/p[2]", xmlDocument));
+  }
 }
