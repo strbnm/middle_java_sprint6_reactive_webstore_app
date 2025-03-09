@@ -59,12 +59,12 @@ bootJar {
     // добавление атрибутов к манифесту
     manifest {
         attributes(
-                'Implementation-Title': 'Spring Boot приложение Витрина интернет-магазина',
+                'Implementation-Title': 'Reactive Spring Boot приложение Витрина интернет-магазина',
                 'Build-Timestamp': System.currentTimeMillis(),
                 'Built-By': project.hasProperty('builtBy') ? project.property('builtBy') : 'default-builder'
         )
     }
     // имя и версия создаваемого архива
-    archiveBaseName = 'sprint5-practicum-homework'
+    archiveBaseName = 'sprint6-practicum-homework'
     archiveVersion = '1.0.0'
 }
