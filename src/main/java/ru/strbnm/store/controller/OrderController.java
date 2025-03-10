@@ -39,13 +39,6 @@ public class OrderController {
         .map(uri -> ResponseEntity.status(HttpStatus.FOUND).location(uri).build());
   }
 
-  //  @Transactional
-  //  @PostMapping("/checkout")
-  //  public Mono<String> checkoutCartAndCreateOrder() {
-  //    return orderService.createOrder()
-  //            .map(order -> "redirect:/orders/" + order.getId());
-  //  }
-
   @GetMapping
   public Mono<String> getOrders(Model m) {
     return orderService
