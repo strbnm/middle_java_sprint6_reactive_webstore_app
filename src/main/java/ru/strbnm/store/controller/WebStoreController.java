@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.thymeleaf.spring6.context.webflux.ReactiveDataDriverContextVariable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.strbnm.store.dto.CartItemDto;
@@ -53,11 +54,12 @@ public class WebStoreController {
     Mono<Long> totalElementsMono = productService.getCountAllProducts();
 
     return Mono.zip(cartItemsMono, totalElementsMono)
-        .doOnNext(tuple -> {
-            Map<Long, CartItemDto> cartItemMap = tuple.getT1();
-            Long totalElements = tuple.getT2();
-            int totalPages = (int) Math.ceil((double) totalElements / size);
-            int cartTotalQuantity =
+        .doOnNext(
+            tuple -> {
+              Map<Long, CartItemDto> cartItemMap = tuple.getT1();
+              Long totalElements = tuple.getT2();
+              int totalPages = (int) Math.ceil((double) totalElements / size);
+              int cartTotalQuantity =
                   cartItemMap.values().stream().mapToInt(CartItemDto::getQuantity).sum();
 
               m.addAttribute("size", size);
@@ -72,7 +74,12 @@ public class WebStoreController {
             })
         .thenReturn("products/showcase")
         .doOnSuccess(
-            viewName -> m.addAttribute("products", productsFlux));
+            viewName ->
+                m.addAttribute(
+                    "products",
+                    new ReactiveDataDriverContextVariable(
+                        productsFlux,
+                        size)));
   }
 
   @GetMapping("/products/{id}")
